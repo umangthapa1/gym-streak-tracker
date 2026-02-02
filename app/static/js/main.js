@@ -424,5 +424,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeAppModal();
     });
+
+    // Global handler for the Stop Impersonation banner button so it works on any page
+    document.addEventListener('click', function(e) {
+        if (!e.target) return;
+        // support clicks on the button or contained elements
+        const stopBtn = (e.target.id === 'stop-impersonate-btn') ? e.target : e.target.closest ? e.target.closest('#stop-impersonate-btn') : null;
+        if (!stopBtn) return;
+        if (!confirm('Stop impersonation and return to admin?')) return;
+        fetch('/api/admin/stop_impersonate', {
+            method: 'POST',
+            credentials: 'same-origin'
+        }).then(r => r.json()).then(d => {
+            if (d && d.success) {
+                showAppModal('Impersonation stopped', '<p>Returned to admin account.</p>');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showAppModal('Error', '<p>Failed to stop impersonation</p>');
+            }
+        }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
+    });
 });
 
