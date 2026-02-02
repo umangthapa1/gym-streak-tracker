@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from app.models import db, User, Workout, Routine, Badge, UserBadge
+from app.models import db, User, Workout, Routine, Badge, UserBadge, AuditLog
 from datetime import datetime, timedelta
 import json
 import os
@@ -456,6 +456,106 @@ def create_share_token():
     current_user.share_token = token
     db.session.commit()
     return jsonify({'share_token': token})
+
+# Admin-only: reset a user's password to a temporary one and return it
+@app.route('/api/admin/reset_password', methods=['POST'])
+@login_required
+def admin_reset_password():
+    if not current_user.is_admin:
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.get_json(silent=True) or request.form
+    try:
+        user_id = int(data.get('user_id'))
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'user not found'}), 404
+    import secrets
+    temp_pw = secrets.token_urlsafe(8)
+    user.set_password(temp_pw)
+    db.session.commit()
+    # Log the action
+    log = AuditLog(actor_id=current_user.id, action='reset_password', details=f'user_id={user.id}')
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'temp_password': temp_pw})
+
+# Admin-only: award or revoke a badge for a user
+@app.route('/api/admin/badge', methods=['POST'])
+@login_required
+def admin_badge_action():
+    if not current_user.is_admin:
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.get_json(silent=True) or request.form
+    try:
+        user_id = int(data.get('user_id'))
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+    action = data.get('action')
+    badge_key = data.get('badge_key')
+    if action not in ('award', 'revoke'):
+        return jsonify({'error': 'invalid action'}), 400
+    badge = Badge.query.filter_by(key=badge_key).first()
+    if not badge:
+        return jsonify({'error': 'badge not found'}), 404
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'user not found'}), 404
+    if action == 'award':
+        # avoid duplicate awards
+        if UserBadge.query.filter_by(user_id=user.id, badge_id=badge.id).first():
+            return jsonify({'error': 'already awarded'}), 400
+        ub = UserBadge(user_id=user.id, badge_id=badge.id, awarded_at=datetime.utcnow())
+        db.session.add(ub)
+        db.session.commit()
+        log = AuditLog(actor_id=current_user.id, action='award_badge', details=f'user_id={user.id} badge={badge.key}')
+        db.session.add(log)
+        db.session.commit()
+        return jsonify({'success': True})
+    else:
+        ub = UserBadge.query.filter_by(user_id=user.id, badge_id=badge.id).first()
+        if not ub:
+            return jsonify({'error': 'badge not awarded'}), 400
+        db.session.delete(ub)
+        db.session.commit()
+        log = AuditLog(actor_id=current_user.id, action='revoke_badge', details=f'user_id={user.id} badge={badge.key}')
+        db.session.add(log)
+        db.session.commit()
+        return jsonify({'success': True})
+
+# Admin-only: regenerate a user's share token
+@app.route('/api/admin/regenerate_share', methods=['POST'])
+@login_required
+def admin_regenerate_share():
+    if not current_user.is_admin:
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.get_json(silent=True) or request.form
+    try:
+        user_id = int(data.get('user_id'))
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'user not found'}), 404
+    import secrets
+    token = secrets.token_urlsafe(12)
+    user.share_token = token
+    db.session.commit()
+    log = AuditLog(actor_id=current_user.id, action='regenerate_share', details=f'user_id={user.id}')
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'share_token': token})
+
+# Admin-only: get recent audit logs
+@app.route('/api/admin/audit', methods=['GET'])
+@login_required
+def admin_audit_logs():
+    if not current_user.is_admin:
+        return jsonify({'error': 'forbidden'}), 403
+    limit = int(request.args.get('limit', 50))
+    logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(limit).all()
+    return jsonify({'logs': [l.to_dict() for l in logs]})
 
 @app.route('/share/<token>', methods=['GET'])
 def public_share(token):

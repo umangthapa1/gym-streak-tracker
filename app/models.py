@@ -2,8 +2,26 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
+from datetime import datetime
 
 db = SQLAlchemy()
+
+
+class AuditLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    action = db.Column(db.String(120), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'actor_id': self.actor_id,
+            'action': self.action,
+            'details': self.details,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        }
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)

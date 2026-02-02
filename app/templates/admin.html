@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-4xl mx-auto p-6">
+    <a href="/" class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4"><i class="fas fa-arrow-left"></i> Back</a>
     <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
+    <div class="mb-4 flex items-center gap-3">
+        <input id="audit-limit" type="number" class="border px-2 py-1 rounded w-20" value="20" />
+        <button id="refresh-audit" class="px-3 py-1 rounded bg-indigo-600 text-white text-sm">Refresh Audit</button>
+        <button id="export-csv" class="px-3 py-1 rounded bg-slate-200 text-slate-700 text-sm">Export Users CSV</button>
+    </div>
     <table class="w-full table-auto border-collapse">
         <thead>
             <tr class="text-left">
@@ -9,6 +15,7 @@
                 <th class="px-4 py-2">Email</th>
                 <th class="px-4 py-2">Workouts</th>
                 <th class="px-4 py-2">Is Admin</th>
+                <th class="px-4 py-2">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -24,48 +31,168 @@
                     {% else %}
                     <button class="promote-btn px-3 py-1 rounded bg-amber-500 text-white text-sm" data-user-id="{{ u.id }}" data-current-admin="{{ '1' if u.is_admin else '0' }}">Revoke</button>
                     {% endif %}
+                    <button class="reset-pw-btn px-3 py-1 rounded bg-rose-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Reset PW</button>
+                    <button class="regen-share-btn px-3 py-1 rounded bg-indigo-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Regenerate Share</button>
+                    <select class="badge-select mx-2" data-user-id="{{ u.id }}">
+                        <option value="">Select badge</option>
+                    </select>
+                    <button class="badge-action-btn px-3 py-1 rounded bg-emerald-500 text-white text-sm" data-user-id="{{ u.id }}">Award</button>
+                    <button class="badge-revoke-btn px-3 py-1 rounded bg-amber-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Revoke</button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <h2 class="text-lg font-bold mt-8 mb-4">Audit Log</h2>
+    <div id="audit-log" class="bg-white p-4 rounded border max-h-72 overflow-auto text-sm text-slate-700"></div>
 </div>
 
 <script>
 // Handle promote/demote clicks
 document.addEventListener('click', function (e) {
-    if (!e.target.classList.contains('promote-btn')) return;
-    const btn = e.target;
-    const userId = btn.dataset.userId;
-    const currentlyAdmin = btn.dataset.currentAdmin === '1';
-    const makeAdmin = !currentlyAdmin;
+    if (e.target.classList.contains('promote-btn')) {
+        const btn = e.target;
+        const userId = btn.dataset.userId;
+        const currentlyAdmin = btn.dataset.currentAdmin === '1';
+        const makeAdmin = !currentlyAdmin;
 
-    if (!confirm(`Are you sure you want to ${makeAdmin ? 'promote' : 'revoke'} admin for user ${userId}?`)) return;
+        if (!confirm(`Are you sure you want to ${makeAdmin ? 'promote' : 'revoke'} admin for user ${userId}?`)) return;
 
-    fetch('/api/admin/promote', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user_id: userId, make_admin: makeAdmin })
-    }).then(r => r.json()).then(data => {
-        if (data && data.success) {
-            const adminCell = document.getElementById(`user-admin-${userId}`);
-            adminCell.textContent = data.is_admin ? 'Yes' : 'No';
-            // Toggle button appearance and text
-            btn.dataset.currentAdmin = data.is_admin ? '1' : '0';
-            btn.textContent = data.is_admin ? 'Revoke' : 'Promote';
-            btn.classList.toggle('bg-green-500', !data.is_admin);
-            btn.classList.toggle('bg-amber-500', data.is_admin);
-            alert('Updated successfully')
-        } else {
-            alert('Error: ' + (data && data.error ? data.error : 'Unknown'))
-        }
-    }).catch(err => {
-        console.error(err);
-        alert('Failed to contact server')
+        fetch('/api/admin/promote', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ user_id: userId, make_admin: makeAdmin })
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) {
+                const adminCell = document.getElementById(`user-admin-${userId}`);
+                adminCell.textContent = data.is_admin ? 'Yes' : 'No';
+                // Toggle button appearance and text
+                btn.dataset.currentAdmin = data.is_admin ? '1' : '0';
+                btn.textContent = data.is_admin ? 'Revoke' : 'Promote';
+                btn.classList.toggle('bg-green-500', !data.is_admin);
+                btn.classList.toggle('bg-amber-500', data.is_admin);
+                alert('Updated successfully')
+            } else {
+                alert('Error: ' + (data && data.error ? data.error : 'Unknown'))
+            }
+        }).catch(err => {
+            console.error(err);
+            alert('Failed to contact server')
+        });
+    }
+
+    if (e.target.classList.contains('reset-pw-btn')) {
+        const userId = e.target.dataset.userId;
+        if (!confirm('Reset password for user ' + userId + '?')) return;
+        fetch('/api/admin/reset_password', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+        }).then(r => r.json()).then(data => {
+            if (data && data.temp_password) {
+                prompt('Temporary password (copy it now):', data.temp_password);
+            } else {
+                alert('Error: ' + (data && data.error ? data.error : 'Unknown'))
+            }
+        }).catch(err => { console.error(err); alert('Server error') });
+    }
+
+    if (e.target.classList.contains('regen-share-btn')) {
+        const userId = e.target.dataset.userId;
+        if (!confirm('Regenerate share token for user ' + userId + '?')) return;
+        fetch('/api/admin/regenerate_share', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+        }).then(r => r.json()).then(data => {
+            if (data && data.share_token) {
+                prompt('New share token (copy it):', data.share_token);
+            } else {
+                alert('Error: ' + (data && data.error ? data.error : 'Unknown'))
+            }
+        }).catch(err => { console.error(err); alert('Server error') });
+    }
+
+    if (e.target.classList.contains('badge-action-btn')) {
+        const userId = e.target.dataset.userId;
+        const select = document.querySelector(`.badge-select[data-user-id='${userId}']`);
+        const key = select.value;
+        if (!key) return alert('Select a badge');
+        fetch('/api/admin/badge', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, action: 'award', badge_key: key })
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) alert('Awarded'); else alert('Error: ' + (data && data.error?data.error:'Unknown'))
+        }).catch(err => { console.error(err); alert('Server error') });
+    }
+
+    if (e.target.classList.contains('badge-revoke-btn')) {
+        const userId = e.target.dataset.userId;
+        const select = document.querySelector(`.badge-select[data-user-id='${userId}']`);
+        const key = select.value;
+        if (!key) return alert('Select a badge');
+        fetch('/api/admin/badge', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, action: 'revoke', badge_key: key })
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) alert('Revoked'); else alert('Error: ' + (data && data.error?data.error:'Unknown'))
+        }).catch(err => { console.error(err); alert('Server error') });
+    }
+});
+
+// Populate badge selects and audit log
+(async function initAdmin() {
+    try {
+        const resp = await fetch('/api/badges');
+        const body = await resp.json();
+        const badges = body.badges || [];
+        document.querySelectorAll('.badge-select').forEach(sel => {
+            badges.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.key;
+                opt.textContent = b.name;
+                sel.appendChild(opt);
+            });
+        });
+        // load audit
+        await loadAudit();
+    } catch (err) { console.error(err) }
+})();
+
+async function loadAudit() {
+    const limit = document.getElementById('audit-limit').value || 20;
+    const r = await fetch(`/api/admin/audit?limit=${limit}`);
+    const j = await r.json();
+    const container = document.getElementById('audit-log');
+    container.innerHTML = '';
+    (j.logs || []).forEach(l => {
+        const div = document.createElement('div');
+        div.className = 'py-1 border-b last:border-b-0';
+        div.textContent = `${l.created_at} [actor:${l.actor_id}] ${l.action} ${l.details || ''}`;
+        container.appendChild(div);
     });
+}
+
+document.getElementById('refresh-audit').addEventListener('click', loadAudit);
+document.getElementById('export-csv').addEventListener('click', function() {
+    // simple export
+    const rows = Array.from(document.querySelectorAll('tbody tr')).map(tr => {
+        return Array.from(tr.querySelectorAll('td')).slice(0,3).map(td=>`"${td.textContent.replace(/"/g,'""')}"`).join(',');
+    });
+    const csv = 'username,email,workouts\n' + rows.join('\n');
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'users.csv'; a.click();
 });
 </script>
 
