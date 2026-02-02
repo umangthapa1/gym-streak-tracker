@@ -15,8 +15,10 @@
                 <i class="fas fa-dumbbell"></i>
             </div>
             <div>
+                {% block header_left %}
                 <h1 class="text-xl font-bold text-slate-900">Gym Streak</h1>
                 <p class="text-xs text-slate-500">Keep the momentum going</p>
+                {% endblock %}
             </div>
             <a href="/routines" class="ml-auto px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold transition-all hover:shadow-lg text-sm">
                 Schedule
