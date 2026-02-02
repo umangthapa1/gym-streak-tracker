@@ -123,19 +123,27 @@ def ensure_schema_changes():
     cols = [c['name'] for c in inspector.get_columns('user')]
 
     # Add share_token column if missing (each ALTER runs in its own transaction)
+    dialect = db.engine.dialect.name
     if 'share_token' not in cols:
         try:
             with db.engine.begin() as conn:
-                conn.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS share_token VARCHAR(64)'))
+                if dialect == 'sqlite':
+                    conn.execute(text('ALTER TABLE "user" ADD COLUMN share_token VARCHAR(64)'))
+                else:
+                    conn.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS share_token VARCHAR(64)'))
             app.logger.info('Added `share_token` column to user table')
         except Exception as e:
             app.logger.exception('Failed to add share_token: %s', e)
 
-    # Add is_admin column if missing; use BOOLEAN DEFAULT FALSE (Postgres requires proper boolean literal)
+    # Add is_admin column if missing; use appropriate boolean/default for DB
     if 'is_admin' not in cols:
         try:
             with db.engine.begin() as conn:
-                conn.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE'))
+                if dialect == 'sqlite':
+                    # SQLite treats booleans as integers
+                    conn.execute(text('ALTER TABLE "user" ADD COLUMN is_admin BOOLEAN DEFAULT 0'))
+                else:
+                    conn.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE'))
             app.logger.info('Added `is_admin` column to user table')
         except Exception as e:
             app.logger.exception('Failed to add is_admin: %s', e)
