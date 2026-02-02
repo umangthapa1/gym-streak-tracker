@@ -425,9 +425,63 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape') closeAppModal();
     });
 
+    // Helper to open the share modal and handle copy/revoke
+    async function handleShareClick() {
+        try {
+            console.debug('[share] handleShareClick invoked');
+            // Try GET first to see if a token exists
+            let r = await fetch('/api/share-token', { method: 'GET', credentials: 'same-origin' });
+            if (!r.ok) throw new Error('failed');
+            let data = await r.json();
+            if (!data.share_token) {
+                // create a new token
+                r = await fetch('/api/share-token', { method: 'POST', credentials: 'same-origin' });
+                if (!r.ok) throw new Error('failed');
+                data = await r.json();
+            }
+            const url = data.share_url || `${location.origin}/share/${data.share_token}`;
+
+            const body = document.createElement('div');
+            body.innerHTML = `<p class="break-words"><strong>${url}</strong></p><div class="mt-4 flex justify-end gap-2"><button id="copy-share" class="px-3 py-1 rounded bg-indigo-600 text-white">Copy</button><button id="revoke-share" class="px-3 py-1 rounded bg-rose-500 text-white">Revoke</button></div>`;
+            showAppModal('Share your streak', body);
+
+            const copyBtn = document.getElementById('copy-share');
+            const revokeBtn = document.getElementById('revoke-share');
+
+            if (copyBtn) copyBtn.addEventListener('click', async () => {
+                try { await navigator.clipboard.writeText(url); copyBtn.textContent = 'Copied!'; setTimeout(()=>copyBtn.textContent='Copy',1500); }
+                catch (err) {
+                    const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); copyBtn.textContent = 'Copied!'; setTimeout(()=>copyBtn.textContent='Copy',1500);
+                }
+            });
+
+            if (revokeBtn) revokeBtn.addEventListener('click', async () => {
+                if (!confirm('Revoke share link?')) return;
+                const rr = await fetch('/api/share-token/revoke', { method: 'POST', credentials: 'same-origin' });
+                const jr = await rr.json();
+                if (jr && jr.success) { showAppModal('Share revoked', '<p>Link revoked</p>'); }
+                else { showAppModal('Error', '<p>Failed to revoke share link</p>'); }
+            });
+        } catch (err) {
+            console.error('Share error', err);
+            showAppModal('Error', '<p>Failed to create or fetch share link</p>');
+        }
+    }
+
+    // Attach a direct click listener to the share button as a fallback
+    const directShareBtn = document.getElementById('share-btn');
+    if (directShareBtn) {
+        directShareBtn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            handleShareClick();
+        });
+    }
+
     // Global handler for the Stop Impersonation banner button so it works on any page
     document.addEventListener('click', function(e) {
         if (!e.target) return;
+        console.debug('[doc-click] target=', e.target);
         // support clicks on the button or contained elements
         const stopBtn = (e.target.id === 'stop-impersonate-btn') ? e.target : e.target.closest ? e.target.closest('#stop-impersonate-btn') : null;
         if (stopBtn) {
@@ -446,46 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Share button (header)
         const shareBtn = (e.target.id === 'share-btn') ? e.target : e.target.closest ? e.target.closest('#share-btn') : null;
         if (shareBtn) {
-            (async function() {
-                try {
-                    // Try GET first to see if a token exists
-                    let r = await fetch('/api/share-token', { method: 'GET', credentials: 'same-origin' });
-                    if (!r.ok) throw new Error('failed');
-                    let data = await r.json();
-                    if (!data.share_token) {
-                        // create a new token
-                        r = await fetch('/api/share-token', { method: 'POST', credentials: 'same-origin' });
-                        if (!r.ok) throw new Error('failed');
-                        data = await r.json();
-                    }
-                    const url = data.share_url || `${location.origin}/share/${data.share_token}`;
-
-                    const body = document.createElement('div');
-                    body.innerHTML = `<p class="break-words"><strong>${url}</strong></p><div class="mt-4 flex justify-end gap-2"><button id="copy-share" class="px-3 py-1 rounded bg-indigo-600 text-white">Copy</button><button id="revoke-share" class="px-3 py-1 rounded bg-rose-500 text-white">Revoke</button></div>`;
-                    showAppModal('Share your streak', body);
-
-                    const copyBtn = document.getElementById('copy-share');
-                    const revokeBtn = document.getElementById('revoke-share');
-
-                    if (copyBtn) copyBtn.addEventListener('click', async () => {
-                        try { await navigator.clipboard.writeText(url); copyBtn.textContent = 'Copied!'; setTimeout(()=>copyBtn.textContent='Copy',1500); }
-                        catch (err) {
-                            const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); copyBtn.textContent = 'Copied!'; setTimeout(()=>copyBtn.textContent='Copy',1500);
-                        }
-                    });
-
-                    if (revokeBtn) revokeBtn.addEventListener('click', async () => {
-                        if (!confirm('Revoke share link?')) return;
-                        const rr = await fetch('/api/share-token/revoke', { method: 'POST', credentials: 'same-origin' });
-                        const jr = await rr.json();
-                        if (jr && jr.success) { showAppModal('Share revoked', '<p>Link revoked</p>'); }
-                        else { showAppModal('Error', '<p>Failed to revoke share link</p>'); }
-                    });
-                } catch (err) {
-                    console.error('Share error', err);
-                    showAppModal('Error', '<p>Failed to create or fetch share link</p>');
-                }
-            })();
+            handleShareClick();
             return;
         }
 
