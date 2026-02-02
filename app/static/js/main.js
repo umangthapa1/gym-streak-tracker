@@ -400,11 +400,33 @@ async function undoCheckIn(event) {
     }
 }
 
-// Generic app modal helper (uses #app-modal in base.html)
+// Generic app modal helper (uses #app-modal in base.html).
+// On pages that don't include the modal skeleton (e.g. the public home page),
+// we gracefully fall back to a simple alert instead of throwing.
 function showAppModal(title, bodyHtml) {
     const modal = document.getElementById('app-modal');
-    document.getElementById('app-modal-title').textContent = title;
+    const titleEl = document.getElementById('app-modal-title');
     const body = document.getElementById('app-modal-body');
+
+    // If any required element is missing, use a basic alert so the
+    // Share button (and other callers) still behave instead of crashing.
+    if (!modal || !titleEl || !body) {
+        try {
+            let plain = '';
+            if (typeof bodyHtml === 'string') {
+                // Strip the most common tags so the alert is readable.
+                plain = bodyHtml.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+            } else if (bodyHtml && bodyHtml.textContent) {
+                plain = bodyHtml.textContent;
+            }
+            alert(title + (plain ? '\n\n' + plain : ''));
+        } catch (e) {
+            alert(title);
+        }
+        return;
+    }
+
+    titleEl.textContent = title;
     if (typeof bodyHtml === 'string') body.innerHTML = bodyHtml; else {
         body.innerHTML = '';
         body.appendChild(bodyHtml);
@@ -412,7 +434,8 @@ function showAppModal(title, bodyHtml) {
     modal.classList.remove('hidden');
 }
 function closeAppModal() {
-    document.getElementById('app-modal').classList.add('hidden');
+    const modal = document.getElementById('app-modal');
+    if (modal) modal.classList.add('hidden');
 }
 // wire close buttons
 document.addEventListener('DOMContentLoaded', () => {
