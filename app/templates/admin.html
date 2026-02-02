@@ -1,19 +1,17 @@
 {% extends "base.html" %}
 {% block page_nav %}
-<header class="bg-white border-b border-slate-100 sticky top-16 z-40">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-        <a href="/" class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 flex items-center justify-center text-white transition-all hover:shadow-lg">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <div>
-            <h1 class="text-lg font-bold text-slate-900">Admin Dashboard</h1>
-            <p class="text-xs text-slate-500">Manage users, badges, and audits</p>
-        </div>
-        <a href="/logout" class="ml-auto px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all text-sm">
-            <i class="fas fa-sign-out-alt mr-2"></i>Logout
-        </a>
+<div class="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+    <a href="/" class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div>
+        <h1 class="text-lg font-bold text-slate-900">Admin Dashboard</h1>
+        <p class="text-xs text-slate-500">Manage users, badges, and audits</p>
     </div>
-</header>
+    <a href="/logout" class="ml-auto px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all text-sm">
+        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}

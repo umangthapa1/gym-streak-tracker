@@ -1,16 +1,14 @@
 {% extends "base.html" %}
 {% block page_nav %}
-<header class="bg-white border-b border-slate-100 sticky top-16 z-40">
-    <div class="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
-        <a href="/" class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 flex items-center justify-center text-white transition-all hover:shadow-lg">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <div>
-            <h1 class="text-lg font-bold text-slate-900">Badges</h1>
-            <p class="text-xs text-slate-500">View your achievements</p>
-        </div>
+<div class="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
+    <a href="/" class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div>
+        <h1 class="text-lg font-bold text-slate-900">Badges</h1>
+        <p class="text-xs text-slate-500">View your achievements</p>
     </div>
-</header>
+</div>
 {% endblock %}
 
 {% block content %}
