@@ -663,6 +663,71 @@ def admin_promote():
 
     return jsonify({'success': True, 'user_id': target.id, 'is_admin': target.is_admin})
 
+# Admin: set user's password to a custom value
+@app.route('/api/admin/set_password', methods=['POST'])
+@login_required
+def admin_set_password():
+    if not current_user.is_admin:
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.get_json(silent=True) or request.form
+    try:
+        user_id = int(data.get('user_id'))
+        new_pw = data.get('new_password')
+    except Exception:
+        return jsonify({'error': 'invalid parameters'}), 400
+    if not new_pw or len(new_pw) < 6:
+        return jsonify({'error': 'password too short (min 6 chars)'}), 400
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'user not found'}), 404
+    user.set_password(new_pw)
+    db.session.commit()
+    log = AuditLog(actor_id=current_user.id, action='set_password', details=f'user_id={user.id}')
+    db.session.add(log)
+    db.session.commit()
+    # Return the new password in response for admin to show in modal briefly if needed
+    return jsonify({'success': True, 'new_password': new_pw})
+
+# Admin: impersonate a user (temporarily switch to their identity)
+@app.route('/api/admin/impersonate', methods=['POST'])
+@login_required
+def admin_impersonate():
+    if not current_user.is_admin:
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.get_json(silent=True) or request.form
+    try:
+        user_id = int(data.get('user_id'))
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'error': 'user not found'}), 404
+    # store original admin id in session
+    session['original_admin_id'] = current_user.id
+    login_user(target)
+    session['impersonated'] = True
+    log = AuditLog(actor_id=session.get('original_admin_id'), action='impersonate', details=f'target_id={target.id}')
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'success': True, 'username': target.username})
+
+# Admin: stop impersonation and restore original admin
+@app.route('/api/admin/stop_impersonate', methods=['POST'])
+@login_required
+def admin_stop_impersonate():
+    orig = session.pop('original_admin_id', None)
+    session.pop('impersonated', None)
+    if not orig:
+        return jsonify({'error': 'not impersonating'}), 400
+    orig_user = User.query.get(orig)
+    if not orig_user:
+        return jsonify({'error': 'original admin not found'}), 404
+    login_user(orig_user)
+    log = AuditLog(actor_id=orig, action='stop_impersonate', details='')
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'success': True})
+
 @app.route('/api/routines/<int:day>', methods=['PUT', 'DELETE'])
 @login_required
 def manage_routine(day):

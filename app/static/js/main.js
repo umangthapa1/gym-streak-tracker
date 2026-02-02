@@ -399,3 +399,30 @@ async function undoCheckIn(event) {
         alert('Error undoing check-in');
     }
 }
+
+// Generic app modal helper (uses #app-modal in base.html)
+function showAppModal(title, bodyHtml) {
+    const modal = document.getElementById('app-modal');
+    document.getElementById('app-modal-title').textContent = title;
+    const body = document.getElementById('app-modal-body');
+    if (typeof bodyHtml === 'string') body.innerHTML = bodyHtml; else {
+        body.innerHTML = '';
+        body.appendChild(bodyHtml);
+    }
+    modal.classList.remove('hidden');
+}
+function closeAppModal() {
+    document.getElementById('app-modal').classList.add('hidden');
+}
+// wire close buttons
+document.addEventListener('DOMContentLoaded', () => {
+    const close = document.getElementById('app-modal-close');
+    const ok = document.getElementById('app-modal-ok');
+    if (close) close.addEventListener('click', closeAppModal);
+    if (ok) ok.addEventListener('click', closeAppModal);
+    // Allow Escape to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAppModal();
+    });
+});
+

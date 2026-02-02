@@ -32,7 +32,9 @@
                     <button class="promote-btn px-3 py-1 rounded bg-amber-500 text-white text-sm" data-user-id="{{ u.id }}" data-current-admin="{{ '1' if u.is_admin else '0' }}">Revoke</button>
                     {% endif %}
                     <button class="reset-pw-btn px-3 py-1 rounded bg-rose-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Reset PW</button>
+                    <button class="set-pw-btn px-3 py-1 rounded bg-rose-700 text-white text-sm ml-2" data-user-id="{{ u.id }}">Set PW</button>
                     <button class="regen-share-btn px-3 py-1 rounded bg-indigo-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Regenerate Share</button>
+                    <button class="impersonate-btn px-3 py-1 rounded bg-slate-700 text-white text-sm ml-2" data-user-id="{{ u.id }}">Impersonate</button>
                     <select class="badge-select mx-2" data-user-id="{{ u.id }}">
                         <option value="">Select badge</option>
                     </select>
@@ -95,11 +97,11 @@ document.addEventListener('click', function (e) {
             body: JSON.stringify({ user_id: userId })
         }).then(r => r.json()).then(data => {
             if (data && data.temp_password) {
-                prompt('Temporary password (copy it now):', data.temp_password);
+                showAppModal('Temporary password', `<p class="break-words"><strong>${data.temp_password}</strong></p><p class="text-xs text-slate-500 mt-2">Copy it now; it will not be shown again.</p>`);
             } else {
-                alert('Error: ' + (data && data.error ? data.error : 'Unknown'))
+                showAppModal('Error', `<p>${(data && data.error ? data.error : 'Unknown')}</p>`)
             }
-        }).catch(err => { console.error(err); alert('Server error') });
+        }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
     }
 
     if (e.target.classList.contains('regen-share-btn')) {
@@ -112,11 +114,29 @@ document.addEventListener('click', function (e) {
             body: JSON.stringify({ user_id: userId })
         }).then(r => r.json()).then(data => {
             if (data && data.share_token) {
-                prompt('New share token (copy it):', data.share_token);
+                showAppModal('New share token', `<p class="break-words"><strong>${data.share_token}</strong></p><p class="text-xs text-slate-500 mt-2">Copy it now; it will not be shown again.</p>`);
             } else {
-                alert('Error: ' + (data && data.error ? data.error : 'Unknown'))
+                showAppModal('Error', `<p>${(data && data.error ? data.error : 'Unknown')}</p>`)
             }
-        }).catch(err => { console.error(err); alert('Server error') });
+        }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
+    }
+
+    if (e.target.classList.contains('set-pw-btn')) {
+        const userId = e.target.dataset.userId;
+        const newpw = prompt('Enter new password for user ' + userId + ' (min 6 chars):');
+        if (!newpw) return;
+        fetch('/api/admin/set_password', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, new_password: newpw })
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) {
+                showAppModal('Password set', `<p>New password set successfully.</p>`);
+            } else {
+                showAppModal('Error', `<p>${(data && data.error ? data.error : 'Unknown')}</p>`)
+            }
+        }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
     }
 
     if (e.target.classList.contains('badge-action-btn')) {
@@ -147,6 +167,41 @@ document.addEventListener('click', function (e) {
         }).then(r => r.json()).then(data => {
             if (data && data.success) alert('Revoked'); else alert('Error: ' + (data && data.error?data.error:'Unknown'))
         }).catch(err => { console.error(err); alert('Server error') });
+    }
+
+    if (e.target.classList.contains('impersonate-btn')) {
+        const userId = e.target.dataset.userId;
+        if (!confirm('Start impersonating user ' + userId + '?')) return;
+        fetch('/api/admin/impersonate', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) {
+                showAppModal('Impersonation started', `<p>Now impersonating <strong>${data.username}</strong>. You will be returned to the original admin when you click <em>Stop Impersonation</em> in the banner.</p>`);
+                // reload to reflect impersonated user's view
+                setTimeout(()=>location.reload(), 1200);
+            } else {
+                showAppModal('Error', `<p>${(data && data.error?data.error:'Unknown')}</p>`)
+            }
+        }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
+    }
+
+    // Stop impersonation handler (banner button in base.html)
+    const stopBtn = document.getElementById('stop-impersonate-btn');
+    if (stopBtn) {
+        stopBtn.addEventListener('click', function() {
+            if (!confirm('Stop impersonation and return to admin?')) return;
+            fetch('/api/admin/stop_impersonate', { method: 'POST', credentials: 'same-origin' }).then(r=>r.json()).then(d=>{
+                if (d && d.success) {
+                    showAppModal('Impersonation stopped', '<p>Returned to admin account.</p>');
+                    setTimeout(()=>location.reload(),800);
+                } else {
+                    showAppModal('Error', '<p>Failed to stop impersonation</p>');
+                }
+            }).catch(err=>{ console.error(err); showAppModal('Server error','<p>Server error occurred</p>') });
+        });
     }
 });
 
