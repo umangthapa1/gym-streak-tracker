@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Streak Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans">
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-100 sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
+                <i class="fas fa-dumbbell"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Gym Streak</h1>
+                <p class="text-xs text-slate-500">Keep the momentum going</p>
+            </div>
+            <a href="/routines" class="ml-auto px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold transition-all hover:shadow-lg text-sm">
+                Schedule
+            </a>
+            <a href="/logout" class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all text-sm">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        <!-- Streak Card -->
+        <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 shadow-lg text-white animate-fade-in" style="animation-delay: 0s">
+            <!-- Decorative blurs -->
+            <div class="absolute top-4 right-4 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-4 left-4 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl"></div>
+            
+            <div class="relative z-10">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-300 mb-2"><i class="fas fa-fire text-orange-400 mr-2"></i>Current Streak</p>
+                <div class="flex items-end justify-between gap-8 mb-8">
+                    <div>
+                        <div class="text-8xl font-black bg-gradient-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent animate-streak-counter">
+                            <span id="current-streak">0</span>
+                        </div>
+                        <p class="text-2xl text-slate-300 mt-2">days</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-2"><i class="fas fa-trophy text-amber-300 mr-2"></i>Best Streak</p>
+                        <p class="text-5xl font-black text-amber-300">
+                            <span id="best-streak">0</span>
+                        </p>
+                        <p class="text-xs text-slate-400 mt-2">days</p>
+                    </div>
+                </div>
+                
+                <!-- On Fire Badge -->
+                <div id="fire-badge" class="hidden mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 border border-amber-200">
+                    <i class="fas fa-fire text-orange-700"></i>
+                    <span class="text-sm font-bold text-orange-700">You're on fire!</span>
+                </div>
+                
+                <p id="best-streak-label" class="text-sm text-slate-400 pt-4 border-t border-slate-700"><i class="fas fa-trophy text-amber-300 mr-2"></i>Best streak: <span id="best-streak-copy">0</span> days</p>
+            </div>
+        </div>
+
+        <!-- Check-in Button & Today's Routine -->
+        <div class="space-y-4">
+            <!-- Today's Routine -->
+            <div id="today-routine" class="animate-fade-in" style="animation-delay: 0.1s">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Check-in Button -->
+            <button id="checkin-btn" onclick="checkInToday()" class="w-full h-20 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 active:scale-95 text-white font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-indigo-500/30 animate-fade-in" style="animation-delay: 0.15s">
+                <i class="fas fa-dumbbell text-2xl"></i>
+                <span>Log Today's Workout</span>
+            </button>
+            <p id="checkin-status" class="text-center text-sm text-slate-500"></p>
+        </div>
+
+        <!-- Stats Grid Below Button -->
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4 animate-fade-in" style="animation-delay: 0.2s">
+            <div class="rounded-2xl bg-white p-4 border border-slate-100 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-lg mb-2 flex-shrink-0"><i class="fas fa-calendar"></i></div>
+                <p class="text-xs font-bold uppercase text-slate-500 mb-1">Total</p>
+                <p class="text-2xl font-black text-indigo-600" id="total-workouts">0</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 border border-slate-100 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-lg mb-2 flex-shrink-0"><i class="fas fa-bullseye"></i></div>
+                <p class="text-xs font-bold uppercase text-slate-500 mb-1">This Month</p>
+                <p class="text-2xl font-black text-emerald-600" id="this-month">0</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 border border-slate-100 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center text-white text-lg mb-2 flex-shrink-0"><i class="fas fa-bolt"></i></div>
+                <p class="text-xs font-bold uppercase text-slate-500 mb-1">This Week</p>
+                <p class="text-2xl font-black text-amber-600" id="this-week">0</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 border border-slate-100 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center text-white text-lg mb-2 flex-shrink-0"><i class="fas fa-chart-line"></i></div>
+                <p class="text-xs font-bold uppercase text-slate-500 mb-1">Avg/Week</p>
+                <p class="text-2xl font-black text-purple-600" id="avg-per-week">0</p>
+            </div>
+        </div>
+
+        <!-- Weekly Schedule -->
+        <div class="rounded-2xl bg-white p-6 border border-slate-100 shadow-sm animate-fade-in" style="animation-delay: 0.35s">
+            <h2 class="text-lg font-bold text-slate-900 mb-4">Weekly Schedule</h2>
+            <div id="weekly-schedule" class="space-y-2">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Calendar -->
+        <div class="rounded-2xl bg-white p-6 border border-slate-100 shadow-sm animate-fade-in" style="animation-delay: 0.4s">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-bold text-slate-900" id="calendar-title">February 2026</h2>
+                <div class="flex gap-2">
+                    <button onclick="prevMonth()" class="p-2 rounded-lg hover:bg-slate-100 transition"><i class="fas fa-chevron-left"></i></button>
+                    <button onclick="nextMonth()" class="p-2 rounded-lg hover:bg-slate-100 transition"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div id="calendar" class="space-y-4">
+                <!-- Populated by JS -->
+            </div>
+            <div class="mt-4 flex gap-4 text-xs text-slate-500">
+                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-gradient-to-r from-indigo-500 to-purple-600"></div>Workout</div>
+                <div class="flex items-center gap-2"><div class="w-4 h-4 rounded border-2 border-indigo-500"></div>Today</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 py-6 border-t border-slate-200 text-center text-xs text-slate-500">
+            <p>Made by <a href="https://httpsumang.vercel.app" target="_blank" class="text-indigo-600 hover:text-indigo-700 font-semibold">Umang Thapa</a></p>
+        </footer>
+    </main>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti" class="fixed top-0 left-0 w-full h-full pointer-events-none"></canvas>
+
+    <script src="{{ url_for('static', filename='js/confetti.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

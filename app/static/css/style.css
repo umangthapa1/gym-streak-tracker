@@ -1,0 +1,288 @@
+/* Global Styles */
+* {
+    scrollbar-color: rgba(99, 102, 241, 0.5) rgba(255, 255, 255, 1);
+    scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
+}
+
+/* Animations */
+@keyframes pulse-slow {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+@keyframes slide-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scale-pop {
+    0% {
+        transform: scale(0.8) rotateZ(0deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1) rotateZ(360deg);
+        opacity: 1;
+    }
+}
+
+@keyframes scale-pop-slow {
+    0% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 40px rgba(168, 85, 247, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.5), 0 0 60px rgba(168, 85, 247, 0.2);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes streak-counter {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-slide-in-up {
+    animation: slide-in-up 0.6s ease-out;
+}
+
+.animate-scale-pop {
+    animation: scale-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-scale-pop-slow {
+    animation: scale-pop-slow 0.6s ease-out;
+}
+
+.animate-bounce-in {
+    animation: bounce-in 0.6s ease-out;
+}
+
+.animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-streak-counter {
+    animation: streak-counter 0.8s ease-out;
+}
+
+.shimmer-loading {
+    background: linear-gradient(90deg, rgba(71, 85, 105, 0.5) 25%, rgba(100, 116, 139, 0.5) 50%, rgba(71, 85, 105, 0.5) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+.glow-effect {
+    animation: glow 2s ease-in-out infinite;
+}
+
+/* Cards */
+.card-base {
+    @apply rounded-2xl backdrop-blur-xl border border-indigo-500/20 shadow-lg transition-all duration-300;
+}
+
+.card-dark {
+    @apply bg-slate-800/50;
+}
+
+.card-gradient {
+    @apply bg-gradient-to-br from-indigo-900/30 to-purple-900/30;
+}
+
+/* Buttons */
+.btn-primary {
+    @apply px-6 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all transform hover:scale-105 active:scale-95 font-semibold shadow-lg;
+}
+
+.btn-secondary {
+    @apply px-4 py-2 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 transition-all transform hover:scale-105 active:scale-95 font-semibold;
+}
+
+.btn-small {
+    @apply px-3 py-1 rounded-lg text-sm font-medium transition-all;
+}
+
+/* Glassmorphism */
+.glass {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(165, 142, 251, 0.1);
+}
+
+/* Rest day styling */
+.rest-day {
+    @apply bg-gradient-to-br from-amber-900/40 to-orange-900/40 border-amber-500/20;
+}
+
+.rest-day-text {
+    @apply text-amber-400;
+}
+
+/* Workout day styling */
+.workout-day {
+    @apply bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border-indigo-500/20;
+}
+
+.workout-day-text {
+    @apply text-indigo-300;
+}
+
+/* Today indicator */
+.today-ring {
+    @apply ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-900;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .text-7xl {
+        @apply text-5xl;
+    }
+    
+    .text-4xl {
+        @apply text-2xl;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .animate-pulse-slow,
+    .animate-slide-in-up,
+    .animate-scale-pop,
+    .animate-bounce-in {
+        animation: none;
+    }
+}
+
+/* Loading skeleton */
+.skeleton {
+    @apply bg-slate-700/50 rounded-lg animate-pulse;
+}
+
+/* Fade transitions */
+.fade-enter {
+    opacity: 0;
+}
+
+.fade-enter-active {
+    opacity: 1;
+    transition: opacity 0.3s ease-in;
+}
+
+.fade-exit {
+    opacity: 1;
+}
+
+.fade-exit-active {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    appearance: none;
+    @apply w-5 h-5 rounded-lg cursor-pointer border-2 border-indigo-400/50 transition-all;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+input[type="checkbox"]:checked {
+    @apply bg-gradient-to-r from-indigo-500 to-purple-500 border-indigo-400;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+}
+
+/* Text input styling */
+input[type="text"],
+textarea {
+    @apply bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all;
+}
+
+/* Select styling */
+select {
+    @apply bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer;
+}
+
+select option {
+    @apply bg-white text-slate-900;
+}

@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.env.local
+.DS_Store
+*.db
+gym_streak.db
+.vscode/
+.idea/
+.vercel
+.env*.local

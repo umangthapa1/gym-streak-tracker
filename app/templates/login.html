@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gym Streak</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+                <i class="fas fa-dumbbell"></i>
+            </div>
+            <h1 class="text-3xl font-black text-slate-900">Gym Streak</h1>
+            <p class="text-slate-500 mt-2">Keep the momentum going</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6">Welcome Back</h2>
+
+            {% if error %}
+            <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200">
+                <p class="text-sm text-red-700"><i class="fas fa-exclamation-circle mr-2"></i>{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <form method="POST" class="space-y-4">
+                <!-- Username -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+                    <input type="text" name="username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition" placeholder="Enter your username">
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                    <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition" placeholder="Enter your password">
+                </div>
+
+                <!-- Remember me -->
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center text-sm text-slate-700">
+                        <input type="checkbox" name="remember" value="1" class="mr-3 rounded"> Remember me
+                    </label>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold transition-all hover:shadow-lg mt-6">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </button>
+            </form>
+
+            <!-- Signup Link -->
+            <div class="mt-6 text-center">
+                <p class="text-slate-600">Don't have an account? 
+                    <a href="{{ url_for('signup') }}" class="text-indigo-600 font-semibold hover:text-indigo-700">Sign up</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 py-4 text-center text-xs text-slate-500">
+            <p>Made by <a href="https://httpsumang.vercel.app" target="_blank" class="text-indigo-600 hover:text-indigo-700 font-semibold">Umang Thapa</a></p>
+        </footer>
+    </div>
+</body>
+</html>

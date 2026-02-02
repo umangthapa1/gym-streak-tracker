@@ -1,0 +1,62 @@
+{
+  "workouts": [
+    {
+      "date": "2026-02-01",
+      "notes": ""
+    }
+  ],
+  "routines": {
+    "0": {
+      "day": 0,
+      "name": "Chest and biceps",
+      "muscle_groups": [
+        "Chest",
+        "Biceps",
+        "Abs"
+      ],
+      "is_rest_day": false
+    },
+    "1": {
+      "day": 1,
+      "name": "",
+      "muscle_groups": [
+        "Back",
+        "Triceps"
+      ],
+      "is_rest_day": false
+    },
+    "2": {
+      "day": 2,
+      "name": "",
+      "muscle_groups": [
+        "Legs",
+        "Shoulders"
+      ],
+      "is_rest_day": false
+    },
+    "3": {
+      "day": 3,
+      "name": "",
+      "muscle_groups": [],
+      "is_rest_day": false
+    },
+    "4": {
+      "day": 4,
+      "name": "Thursday",
+      "muscle_groups": [],
+      "is_rest_day": false
+    },
+    "5": {
+      "day": 5,
+      "name": "Friday",
+      "muscle_groups": [],
+      "is_rest_day": false
+    },
+    "6": {
+      "day": 6,
+      "name": "Saturday",
+      "muscle_groups": [],
+      "is_rest_day": true
+    }
+  }
+}
