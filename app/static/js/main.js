@@ -448,6 +448,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape') closeAppModal();
     });
 
+    // Mobile nav dropdown toggle
+    const navToggle = document.getElementById('nav-toggle');
+    const primaryNav = document.getElementById('primary-nav');
+    if (navToggle && primaryNav) {
+        navToggle.addEventListener('click', () => {
+            const isHidden = primaryNav.classList.contains('hidden');
+            if (isHidden) {
+                primaryNav.classList.remove('hidden');
+                primaryNav.classList.add('flex');
+                navToggle.setAttribute('aria-expanded', 'true');
+            } else {
+                primaryNav.classList.add('hidden');
+                primaryNav.classList.remove('flex');
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
     // Helper to open the share modal and handle copy/revoke
     async function handleShareClick() {
         try {

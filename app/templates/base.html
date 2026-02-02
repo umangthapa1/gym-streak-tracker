@@ -23,7 +23,19 @@
 {% endblock %}
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-start sm:justify-end pt-2 sm:pt-0 flex-wrap">
+            <!-- Mobile nav toggle -->
+            <button
+                id="nav-toggle"
+                type="button"
+                class="inline-flex items-center justify-center rounded-lg p-2 text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:hidden"
+                aria-controls="primary-nav"
+                aria-expanded="false"
+            >
+                <span class="sr-only">Toggle navigation</span>
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div id="primary-nav" class="items-center gap-2 sm:gap-3 w-full sm:w-auto justify-start sm:justify-end pt-2 sm:pt-0 flex-wrap hidden sm:flex">
                 <a href="/routines" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold transition-all hover:shadow-lg text-xs sm:text-sm w-full sm:w-auto text-center">
                     Schedule
                 </a>
