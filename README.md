@@ -1,3 +1,31 @@
+# Gym Streak
+
+A modern, mobile-first gym streak tracker built with **React**, **TypeScript**, and **Vite**.
+
+### Features
+
+- **Beautiful responsive UI**: Optimized for small screens with sticky header, card layout, and touch-friendly controls.
+- **Streak tracking**: Calculates your current daily workout streak based on logged sessions.
+- **Workout history**: Quickly review previous workouts, with optional notes and easy delete.
+- **Weekly mini chart**: Visual bar chart of how many workouts you logged over the last 7 days.
+- **Share button**: One-tap share using the Web Share API where available, with clipboard / Twitter fallback.
+
+### Getting started
+
+```bash
+npm install
+npm run dev
+```
+
+Then open `http://localhost:5173` in your browser (or your mobile device on the same network).
+
+### Production build
+
+```bash
+npm run build
+npm run preview
+```
+
 # 💪 Gym Streak Tracker
 
 A modern, responsive gym workout tracker app built with Python Flask, HTML, CSS, and vanilla JavaScript. Track your workout streaks, plan your weekly routines, and celebrate your progress with confetti animations!

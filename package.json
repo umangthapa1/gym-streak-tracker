@@ -1,0 +1,29 @@
+{
+  "name": "gym-streak",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A modern, responsive gym workout tracker SPA built with React, TypeScript and Vite. Track your workout streaks, plan routines, and share your progress.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.0",
+    "vitest": "^1.2.0"
+  }
+}
