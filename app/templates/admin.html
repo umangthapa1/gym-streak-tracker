@@ -13,14 +13,60 @@
         </thead>
         <tbody>
             {% for u in users %}
-            <tr class="border-t">
+            <tr id="user-row-{{ u.id }}" class="border-t">
                 <td class="px-4 py-2">{{ u.username }}</td>
                 <td class="px-4 py-2">{{ u.email }}</td>
                 <td class="px-4 py-2">{{ u.workouts }}</td>
-                <td class="px-4 py-2">{{ 'Yes' if u.is_admin else 'No' }}</td>
+                <td class="px-4 py-2" id="user-admin-{{ u.id }}">{{ 'Yes' if u.is_admin else 'No' }}</td>
+                <td class="px-4 py-2">
+                    {% if not u.is_admin %}
+                    <button class="promote-btn px-3 py-1 rounded bg-green-500 text-white text-sm" data-user-id="{{ u.id }}" data-current-admin="{{ '0' if not u.is_admin else '1' }}">Promote</button>
+                    {% else %}
+                    <button class="promote-btn px-3 py-1 rounded bg-amber-500 text-white text-sm" data-user-id="{{ u.id }}" data-current-admin="{{ '1' if u.is_admin else '0' }}">Revoke</button>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<script>
+// Handle promote/demote clicks
+document.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('promote-btn')) return;
+    const btn = e.target;
+    const userId = btn.dataset.userId;
+    const currentlyAdmin = btn.dataset.currentAdmin === '1';
+    const makeAdmin = !currentlyAdmin;
+
+    if (!confirm(`Are you sure you want to ${makeAdmin ? 'promote' : 'revoke'} admin for user ${userId}?`)) return;
+
+    fetch('/api/admin/promote', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userId, make_admin: makeAdmin })
+    }).then(r => r.json()).then(data => {
+        if (data && data.success) {
+            const adminCell = document.getElementById(`user-admin-${userId}`);
+            adminCell.textContent = data.is_admin ? 'Yes' : 'No';
+            // Toggle button appearance and text
+            btn.dataset.currentAdmin = data.is_admin ? '1' : '0';
+            btn.textContent = data.is_admin ? 'Revoke' : 'Promote';
+            btn.classList.toggle('bg-green-500', !data.is_admin);
+            btn.classList.toggle('bg-amber-500', data.is_admin);
+            alert('Updated successfully')
+        } else {
+            alert('Error: ' + (data && data.error ? data.error : 'Unknown'))
+        }
+    }).catch(err => {
+        console.error(err);
+        alert('Failed to contact server')
+    });
+});
+</script>
+
 {% endblock %}

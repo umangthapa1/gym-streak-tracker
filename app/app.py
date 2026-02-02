@@ -519,6 +519,42 @@ def admin_dashboard():
 
     return render_template('admin.html', users=user_stats)
 
+
+# Admin actions: promote/demote users
+@app.route('/api/admin/promote', methods=['POST'])
+@login_required
+def admin_promote():
+    # Only admins may perform this action
+    if not current_user.is_admin:
+        return jsonify({'error': 'forbidden'}), 403
+
+    data = request.get_json(silent=True) or request.form
+    try:
+        user_id = int(data.get('user_id'))
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+
+    make_admin = data.get('make_admin', True)
+    # Accept 'true'/'false' strings for form posts
+    if isinstance(make_admin, str):
+        make_admin = make_admin.lower() in ('1', 'true', 'yes', 'on')
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'error': 'user not found'}), 404
+
+    # Prevent removing the last admin accidentally: require at least one admin remains
+    if target.id == current_user.id and not make_admin:
+        # Allow self-demotion but ensure someone else is admin first
+        other_admin_count = User.query.filter(User.is_admin == True, User.id != current_user.id).count()
+        if other_admin_count == 0:
+            return jsonify({'error': 'cannot remove admin role from last admin'}), 400
+
+    target.is_admin = bool(make_admin)
+    db.session.commit()
+
+    return jsonify({'success': True, 'user_id': target.id, 'is_admin': target.is_admin})
+
 @app.route('/api/routines/<int:day>', methods=['PUT', 'DELETE'])
 @login_required
 def manage_routine(day):
