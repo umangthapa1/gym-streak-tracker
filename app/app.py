@@ -456,14 +456,51 @@ def get_badges():
 def badges_page():
     return render_template('badges.html')
 
-@app.route('/api/share-token', methods=['POST'])
+@app.route('/api/share-token', methods=['GET','POST'])
 @login_required
-def create_share_token():
+def share_token_handler():
+    # GET: return existing token (or null)
+    if request.method == 'GET':
+        return jsonify({'share_token': current_user.share_token})
+
+    # POST: create a fresh token for the current user
     import secrets
     token = secrets.token_urlsafe(12)
     current_user.share_token = token
     db.session.commit()
-    return jsonify({'share_token': token})
+    share_url = url_for('public_share', token=token, _external=True)
+    # audit
+    try:
+        log = AuditLog(actor_id=current_user.id, action='create_share_token', details=f'token={token}')
+        db.session.add(log)
+        db.session.commit()
+    except Exception:
+        # don't fail the API if audit logging fails
+        try:
+            db.session.rollback()
+        except Exception:
+            db.session.remove()
+    return jsonify({'share_token': token, 'share_url': share_url})
+
+
+@app.route('/api/share-token/revoke', methods=['POST'])
+@login_required
+def revoke_share_token():
+    if not current_user.share_token:
+        return jsonify({'success': True, 'message': 'no token'})
+    old = current_user.share_token
+    current_user.share_token = None
+    db.session.commit()
+    try:
+        log = AuditLog(actor_id=current_user.id, action='revoke_share_token', details=f'old_token={old}')
+        db.session.add(log)
+        db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            db.session.remove()
+    return jsonify({'success': True})
 
 # Admin-only: reset a user's password to a temporary one and return it
 @app.route('/api/admin/reset_password', methods=['POST'])
