@@ -22,6 +22,10 @@
             <a href="/routines" class="ml-auto px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold transition-all hover:shadow-lg text-sm">
                 Schedule
             </a>
+            {% if current_user.is_authenticated %}
+            <button id="share-btn" class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all text-sm"><i class="fas fa-share-alt mr-2"></i>Share</button>
+            <a href="/badges" class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all text-sm">Badges</a>
+            {% endif %}
             <a href="/logout" class="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all text-sm">
                 <i class="fas fa-sign-out-alt mr-2"></i>Logout
             </a>
