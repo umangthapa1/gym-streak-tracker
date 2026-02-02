@@ -239,6 +239,9 @@ function openEditModal(dayIndex) {
                 muscleButtons.appendChild(button);
             });
 
+            // After buttons are created, update the routine name default from the current selection
+            updateRoutineNameFromSelected();
+
             // Close modal on background click
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
@@ -252,11 +255,19 @@ function openEditModal(dayIndex) {
 function updateMuscleDisplay(dayIndex) {
     const restCheck = document.getElementById('rest-day-check');
     const musclesContainer = document.getElementById('muscles-container');
+    const routineName = document.getElementById('routine-name');
     
     if (restCheck.checked) {
         musclesContainer.style.display = 'none';
+        // If routine name was auto-generated, clear it when making a rest day
+        if (routineName && routineName.dataset && routineName.dataset.autoTitle && routineName.value.trim() === routineName.dataset.autoTitle.trim()) {
+            routineName.value = '';
+            routineName.dataset.autoTitle = '';
+        }
     } else {
         musclesContainer.style.display = 'block';
+        // Recompute name based on muscle selection if appropriate
+        updateRoutineNameFromSelected();
     }
 }
 
@@ -269,7 +280,46 @@ function toggleMuscleButton(muscle, button) {
     button.classList.toggle('bg-white');
     button.classList.toggle('text-slate-700');
     button.classList.toggle('hover:border-indigo-600');
+
+    // Update the routine name default when selection changes
+    updateRoutineNameFromSelected();
 }
+
+// Create a display-friendly title from selected muscles
+function makeTitleFromMuscles(muscles) {
+    const caps = muscles.map(m => {
+        // Normalize spacing and capitalization
+        return m.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    });
+
+    if (caps.length === 0) return '';
+    if (caps.length === 1) return caps[0];
+    if (caps.length === 2) return `${caps[0]} and ${caps[1]}`;
+    // 3+ -> 'A, B and C'
+    return `${caps.slice(0, -1).join(', ')} and ${caps[caps.length - 1]}`;
+}
+
+// Update the routine name input based on selected muscles
+function updateRoutineNameFromSelected() {
+    const routineName = document.getElementById('routine-name');
+    const muscleButtons = document.getElementById('muscle-buttons');
+    if (!routineName || !muscleButtons) return;
+
+    const selectedButtons = Array.from(muscleButtons.querySelectorAll('button'))
+        .filter(btn => btn.classList.contains('text-indigo-700'));
+    const muscles = selectedButtons.map(btn => btn.textContent.trim());
+
+    const newTitle = makeTitleFromMuscles(muscles);
+    const prevAuto = routineName.dataset.autoTitle || '';
+
+    // If the user hasn't provided a custom name (empty) or the current name equals the previous auto-generated one,
+    // update it with the new auto-generated title. Otherwise, respect the user's custom title.
+    if (!routineName.value.trim() || routineName.value.trim() === prevAuto.trim()) {
+        routineName.value = newTitle;
+        routineName.dataset.autoTitle = newTitle;
+    }
+}
+
 
 // Add muscle group in modal
 function addMuscleToModal(dayIndex) {
