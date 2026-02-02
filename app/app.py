@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from app.models import db, User, Workout, Routine
+from app.models import db, User, Workout, Routine, Badge, UserBadge
 from datetime import datetime, timedelta
 import json
 import os
