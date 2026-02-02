@@ -75,7 +75,17 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except Exception as e:
+        # If the DB schema is missing new columns (e.g., share_token/is_admin), attempt to add them and retry once.
+        app.logger.warning('load_user failed, attempting schema fix: %s', e)
+        try:
+            ensure_schema_changes()
+            return User.query.get(int(user_id))
+        except Exception as e2:
+            app.logger.exception('load_user still failing after schema fix: %s', e2)
+            return None
 
 # Initialize database tables (only if they don't exist)
 def init_db():
