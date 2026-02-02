@@ -82,9 +82,18 @@ def load_user(user_id):
         app.logger.warning('load_user failed, attempting schema fix: %s', e)
         try:
             ensure_schema_changes()
+            # Clear any failed transaction state before retrying
+            try:
+                db.session.rollback()
+            except Exception:
+                db.session.remove()
             return User.query.get(int(user_id))
         except Exception as e2:
             app.logger.exception('load_user still failing after schema fix: %s', e2)
+            try:
+                db.session.rollback()
+            except Exception:
+                db.session.remove()
             return None
 
 # Initialize database tables (only if they don't exist)
@@ -110,21 +119,35 @@ def ensure_schema_changes():
     """Apply non-destructive schema updates for existing DBs (add columns if missing)."""
     from sqlalchemy import inspect, text
     inspector = inspect(db.engine)
-    with db.engine.connect() as conn:
-        # Add share_token and is_admin columns to users table if missing
-        cols = [c['name'] for c in inspector.get_columns('user')]
-        if 'share_token' not in cols:
-            try:
-                conn.execute(text('ALTER TABLE "user" ADD COLUMN share_token VARCHAR(64)'))
-                app.logger.info('Added `share_token` column to user table')
-            except Exception as e:
-                app.logger.exception('Failed to add share_token: %s', e)
-        if 'is_admin' not in cols:
-            try:
-                conn.execute(text('ALTER TABLE "user" ADD COLUMN is_admin BOOLEAN DEFAULT 0'))
-                app.logger.info('Added `is_admin` column to user table')
-            except Exception as e:
-                app.logger.exception('Failed to add is_admin: %s', e)
+
+    cols = [c['name'] for c in inspector.get_columns('user')]
+
+    # Add share_token column if missing (each ALTER runs in its own transaction)
+    if 'share_token' not in cols:
+        try:
+            with db.engine.begin() as conn:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS share_token VARCHAR(64)'))
+            app.logger.info('Added `share_token` column to user table')
+        except Exception as e:
+            app.logger.exception('Failed to add share_token: %s', e)
+
+    # Add is_admin column if missing; use BOOLEAN DEFAULT FALSE (Postgres requires proper boolean literal)
+    if 'is_admin' not in cols:
+        try:
+            with db.engine.begin() as conn:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE'))
+            app.logger.info('Added `is_admin` column to user table')
+        except Exception as e:
+            app.logger.exception('Failed to add is_admin: %s', e)
+
+    # After attempting schema changes, ensure the SQLAlchemy session isn't left in an aborted state
+    try:
+        db.session.rollback()
+    except Exception:
+        try:
+            db.session.remove()
+        except Exception:
+            app.logger.debug('Failed to cleanup session after schema changes')
 
 
 def seed_badges():
