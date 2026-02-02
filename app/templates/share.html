@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-2xl mx-auto p-6 text-center">
+    {% if error %}
+        <div class="p-6 bg-red-50 rounded-lg">{{ error }}</div>
+    {% else %}
+        <h1 class="text-3xl font-bold">{{ user.username }}'s Streak</h1>
+        <p class="text-slate-600 mt-2">Current streak: <strong>{{ current_streak }}</strong></p>
+        <p class="text-slate-600">Best streak: <strong>{{ best_streak }}</strong></p>
+    {% endif %}
+</div>
+{% endblock %}

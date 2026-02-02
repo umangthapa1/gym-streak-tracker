@@ -220,6 +220,11 @@ async function checkInToday() {
             const rect = button.getBoundingClientRect();
             confetti.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 80);
 
+            // If a badge was awarded, show badge modal
+            if (data.new_badge) {
+                showBadgeModal(data.new_badge);
+            }
+
             // Update button state
             button.innerHTML = '<span class="text-2xl">✅</span><span>Workout Logged! <a href="#" onclick="undoCheckIn(event)" class="underline text-xs ml-2">Undo</a></span>';
             button.style.background = 'linear-gradient(to right, #10b981, #059669)';
@@ -236,6 +241,24 @@ async function checkInToday() {
                 loadTodayRoutine();
                 loadWeeklySchedule();
             }, 800);
+
+
+// Badge modal helper
+function showBadgeModal(badge) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-3xl border border-slate-200 p-8 max-w-sm w-full shadow-xl text-center">
+            <div class="text-6xl mb-4">${badge.icon || '🏅'}</div>
+            <h3 class="text-xl font-bold">${badge.name}</h3>
+            <p class="text-sm text-slate-600 mt-2">${badge.description || ''}</p>
+            <div class="mt-6">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" class="px-4 py-2 rounded-2xl bg-indigo-600 text-white">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
         } else {
             const error = await response.json();
             alert(error.error || 'Error checking in');

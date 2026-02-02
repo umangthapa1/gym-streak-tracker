@@ -10,8 +10,14 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    # Optional: token that allows a public shareable streak page
+    share_token = db.Column(db.String(64), unique=True, nullable=True)
+    # Admin flag for admin dashboard access
+    is_admin = db.Column(db.Boolean, default=False)
+
     workouts = db.relationship('Workout', backref='user', lazy=True, cascade='all, delete-orphan')
     routines = db.relationship('Routine', backref='user', lazy=True, cascade='all, delete-orphan')
+    badges = db.relationship('UserBadge', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -40,3 +46,36 @@ class Routine(db.Model):
 
     def set_muscle_groups(self, groups):
         self.muscle_groups = json.dumps(groups)
+
+
+# Badges
+class Badge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(64), unique=True, nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+    icon = db.Column(db.String(120), nullable=True)  # CSS class or emoji
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'key': self.key,
+            'name': self.name,
+            'description': self.description,
+            'icon': self.icon
+        }
+
+class UserBadge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    badge_id = db.Column(db.Integer, db.ForeignKey('badge.id'), nullable=False)
+    awarded_at = db.Column(db.DateTime, nullable=False)
+
+    badge = db.relationship('Badge')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'badge': self.badge.to_dict(),
+            'awarded_at': self.awarded_at.strftime('%Y-%m-%d %H:%M:%S')
+        }

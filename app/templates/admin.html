@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
+    <table class="w-full table-auto border-collapse">
+        <thead>
+            <tr class="text-left">
+                <th class="px-4 py-2">Username</th>
+                <th class="px-4 py-2">Email</th>
+                <th class="px-4 py-2">Workouts</th>
+                <th class="px-4 py-2">Is Admin</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr class="border-t">
+                <td class="px-4 py-2">{{ u.username }}</td>
+                <td class="px-4 py-2">{{ u.email }}</td>
+                <td class="px-4 py-2">{{ u.workouts }}</td>
+                <td class="px-4 py-2">{{ 'Yes' if u.is_admin else 'No' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

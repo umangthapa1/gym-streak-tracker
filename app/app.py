@@ -83,6 +83,10 @@ def init_db():
         try:
             db.create_all()
             app.logger.info('Database initialized successfully (create_all).')
+            # Ensure any new columns are present for User (safe ALTERs)
+            ensure_schema_changes()
+            # Ensure required badges exist
+            seed_badges()
         except Exception as e:
             # In serverless environments a transient DB failure should not crash the function import.
             # Log the exception and allow the app to start; itinerary retries or migrations can run later.
@@ -90,6 +94,41 @@ def init_db():
 
 # Try to initialize DB but do not let failures prevent the app from importing.
 init_db()
+
+
+def ensure_schema_changes():
+    """Apply non-destructive schema updates for existing DBs (add columns if missing)."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    with db.engine.connect() as conn:
+        # Add share_token and is_admin columns to users table if missing
+        cols = [c['name'] for c in inspector.get_columns('user')]
+        if 'share_token' not in cols:
+            try:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN share_token VARCHAR(64)'))
+                app.logger.info('Added `share_token` column to user table')
+            except Exception as e:
+                app.logger.exception('Failed to add share_token: %s', e)
+        if 'is_admin' not in cols:
+            try:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN is_admin BOOLEAN DEFAULT 0'))
+                app.logger.info('Added `is_admin` column to user table')
+            except Exception as e:
+                app.logger.exception('Failed to add is_admin: %s', e)
+
+
+def seed_badges():
+    """Ensure default milestone badges exist."""
+    milestones = [
+        ('streak_7', '7-Day Streak', 'Logged workouts 7 days in a row', '🔥'),
+        ('streak_30', '30-Day Streak', 'Impressive 30-day streak', '🏆'),
+        ('streak_100', '100-Day Streak', 'Century club - 100 days!', '🥇')
+    ]
+    for key, name, desc, icon in milestones:
+        if not Badge.query.filter_by(key=key).first():
+            b = Badge(key=key, name=name, description=desc, icon=icon)
+            db.session.add(b)
+    db.session.commit()
 
 # Startup diagnostic logging (redacts credentials)
 try:
@@ -307,10 +346,29 @@ def checkout_today():
     
     current_streak, best_streak = calculate_streak()
     
+    # Award milestone badges if applicable
+    new_badge = None
+    try:
+        milestones = {7: 'streak_7', 30: 'streak_30', 100: 'streak_100'}
+        if current_streak in milestones:
+            badge_key = milestones[current_streak]
+            badge = Badge.query.filter_by(key=badge_key).first()
+            if badge:
+                # Check if user already has it
+                if not UserBadge.query.filter_by(user_id=current_user.id, badge_id=badge.id).first():
+                    import datetime as _dt
+                    ub = UserBadge(user_id=current_user.id, badge_id=badge.id, awarded_at=_dt.datetime.now())
+                    db.session.add(ub)
+                    db.session.commit()
+                    new_badge = badge.to_dict()
+    except Exception:
+        app.logger.exception('Error awarding badges')
+
     resp = make_response(jsonify({
         'success': True,
         'current_streak': current_streak,
-        'best_streak': best_streak
+        'best_streak': best_streak,
+        'new_badge': new_badge
     }))
     # set a persistent streak cookie for convenience (30 days)
     if current_streak is not None:
@@ -330,6 +388,91 @@ def get_routines():
             'is_rest_day': routine.is_rest_day
         }
     return jsonify(result)
+
+
+# ============ Badges & Sharing ============
+@app.route('/api/badges', methods=['GET'])
+@login_required
+def get_badges():
+    badges = Badge.query.all()
+    awarded = UserBadge.query.filter_by(user_id=current_user.id).all()
+    awarded_map = {ub.badge.key: ub.to_dict() for ub in awarded}
+
+    return jsonify({
+        'badges': [b.to_dict() for b in badges],
+        'awarded': awarded_map
+    })
+
+@app.route('/api/share-token', methods=['POST'])
+@login_required
+def create_share_token():
+    import secrets
+    token = secrets.token_urlsafe(12)
+    current_user.share_token = token
+    db.session.commit()
+    return jsonify({'share_token': token})
+
+@app.route('/share/<token>', methods=['GET'])
+def public_share(token):
+    user = User.query.filter_by(share_token=token).first()
+    if not user:
+        return render_template('share.html', error='Share link not found')
+
+    # Compute user stats
+    with app.app_context():
+        workouts = Workout.query.filter_by(user_id=user.id).all()
+        current_streak, best_streak = 0, 0
+        if workouts:
+            current_streak, best_streak = calculate_streak_for_user(user.id)
+    return render_template('share.html', user=user, current_streak=current_streak, best_streak=best_streak)
+
+
+def calculate_streak_for_user(user_id):
+    workouts = Workout.query.filter_by(user_id=user_id).all()
+    workout_dates = sorted([w.date for w in workouts])
+    if not workout_dates:
+        return 0, 0
+    current_streak = 0
+    check_date = datetime.now()
+    for i in range(365):
+        check_str = check_date.strftime('%Y-%m-%d')
+        if check_str in workout_dates:
+            current_streak += 1
+            check_date -= timedelta(days=1)
+        else:
+            break
+    # Best streak calculation (same as earlier)
+    best_streak = 0
+    temp_streak = 0
+    for idx, workout_date in enumerate(workout_dates):
+        if idx == 0:
+            temp_streak = 1
+        else:
+            current = datetime.strptime(workout_date, '%Y-%m-%d')
+            prev = datetime.strptime(workout_dates[idx - 1], '%Y-%m-%d')
+            if (current - prev).days == 1:
+                temp_streak += 1
+            else:
+                best_streak = max(best_streak, temp_streak)
+                temp_streak = 1
+    best_streak = max(best_streak, temp_streak)
+    return current_streak, best_streak
+
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    if not current_user.is_admin:
+        return redirect(url_for('index'))
+
+    users = User.query.order_by(User.username).all()
+    # Simple stats per user
+    user_stats = []
+    for u in users:
+        wcount = Workout.query.filter_by(user_id=u.id).count()
+        user_stats.append({'id': u.id, 'username': u.username, 'email': u.email, 'workouts': wcount, 'is_admin': u.is_admin})
+
+    return render_template('admin.html', users=user_stats)
 
 @app.route('/api/routines/<int:day>', methods=['PUT', 'DELETE'])
 @login_required

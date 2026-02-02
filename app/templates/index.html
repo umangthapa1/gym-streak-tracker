@@ -60,6 +60,14 @@
                 </div>
                 
                 <p id="best-streak-label" class="text-sm text-slate-400 pt-4 border-t border-slate-700"><i class="fas fa-trophy text-amber-300 mr-2"></i>Best streak: <span id="best-streak-copy">0</span> days</p>
+
+                <div class="mt-4">
+                    <a href="/badges" class="text-indigo-200 hover:text-white text-sm font-semibold">View Badges</a>
+                    {% if current_user.is_admin %}
+                    <span class="mx-2">•</span>
+                    <a href="/admin" class="text-indigo-200 hover:text-white text-sm font-semibold">Admin</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
