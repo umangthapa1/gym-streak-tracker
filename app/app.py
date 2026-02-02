@@ -111,8 +111,8 @@ def init_db():
             # Log the exception and allow the app to start; itinerary retries or migrations can run later.
             app.logger.exception('Database initialization failed; continuing without DB: %s', e)
 
-# Try to initialize DB but do not let failures prevent the app from importing.
-init_db()
+# We will initialize the DB after helper functions are defined to avoid forward reference issues.
+# init_db() will be called at the end of this module during import-time once helpers are defined.
 
 
 def ensure_schema_changes():
@@ -175,6 +175,12 @@ try:
     app.logger.info('DB engine options present=%s ssl_context=%s', bool(engine_opts), has_ssl_context)
 except Exception:
     app.logger.exception('Failed to log DB startup diagnostics')
+
+# Initialize DB now that helpers are defined
+try:
+    init_db()
+except Exception:
+    app.logger.exception('init_db failed during startup')
 
 # ============ Auth Routes ============
 
