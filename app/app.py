@@ -436,6 +436,12 @@ def get_badges():
         'awarded': awarded_map
     })
 
+# Render badges page
+@app.route('/badges')
+@login_required
+def badges_page():
+    return render_template('badges.html')
+
 @app.route('/api/share-token', methods=['POST'])
 @login_required
 def create_share_token():
