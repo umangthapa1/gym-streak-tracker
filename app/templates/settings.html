@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - Gym Streak{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Account Settings</h1>
+        <p class="text-slate-600 dark:text-slate-400">Manage your account preferences</p>
+    </div>
+
+    <!-- Username Change Section -->
+    <div class="rounded-2xl bg-white dark-routine-card border border-slate-200 dark-routine-border p-6 shadow-sm">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <i class="fas fa-user text-indigo-600 dark:text-indigo-400"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold dark-routine-text">Change Username</h2>
+                <p class="text-sm text-slate-500 dark-routine-text-muted">Update your display name</p>
+            </div>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold dark-routine-text-muted mb-2">Current Username</label>
+                <input type="text" id="current-username" value="{{ current_user.username }}" disabled class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold dark-routine-text-muted mb-2">New Username</label>
+                <input type="text" id="new-username" placeholder="Enter new username" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/50 outline-none transition dark-routine-card dark-routine-text">
+                <p class="text-xs text-slate-500 dark-routine-text-muted mt-1">Username must be unique and 3-20 characters</p>
+            </div>
+            <button onclick="changeUsername()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold transition-all">
+                <i class="fas fa-save mr-2"></i>Update Username
+            </button>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="rounded-2xl bg-white dark-routine-card border-2 border-red-200 dark:border-red-900/50 p-6 shadow-sm">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-red-900 dark:text-red-300">Danger Zone</h2>
+                <p class="text-sm text-red-700 dark:text-red-400">Irreversible and destructive actions</p>
+            </div>
+        </div>
+        
+        <div class="space-y-4">
+            <div class="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50">
+                <p class="text-sm text-red-900 dark:text-red-300 mb-2 font-semibold">Delete Account</p>
+                <p class="text-xs text-red-700 dark:text-red-400 mb-4">This will permanently delete your account, all workouts, routines, badges, and streaks. This action cannot be undone.</p>
+                <button onclick="showDeleteConfirm()" class="px-6 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all">
+                    <i class="fas fa-trash mr-2"></i>Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-account-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="dark-modal-bg rounded-2xl p-8 max-w-md w-full shadow-2xl scale-pop">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold dark-modal-text mb-2">Delete Account?</h2>
+            <p class="dark-modal-text-muted">This action cannot be undone. All your data will be permanently deleted.</p>
+        </div>
+        
+        <div class="space-y-3 mb-6">
+            <div>
+                <label class="block text-sm font-semibold dark-modal-text-muted mb-2">Type your username to confirm</label>
+                <input type="text" id="confirm-username" placeholder="{{ current_user.username }}" class="w-full px-4 py-3 rounded-xl border dark-modal-border focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-900/50 outline-none transition dark-routine-card dark-routine-text">
+            </div>
+        </div>
+        
+        <div class="flex gap-3">
+            <button onclick="closeDeleteModal()" class="flex-1 px-4 py-3 rounded-xl border dark-modal-border dark-modal-text font-semibold hover:bg-slate-50 dark-modal-hover transition">
+                Cancel
+            </button>
+            <button onclick="confirmDeleteAccount()" id="confirm-delete-btn" disabled class="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold transition">
+                Delete Account
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enable delete button only when username matches
+document.getElementById('confirm-username')?.addEventListener('input', function(e) {
+    const btn = document.getElementById('confirm-delete-btn');
+    const currentUsername = '{{ current_user.username }}';
+    btn.disabled = e.target.value !== currentUsername;
+});
+
+function showDeleteConfirm() {
+    document.getElementById('delete-account-modal').classList.remove('hidden');
+    document.getElementById('confirm-username').value = '';
+    document.getElementById('confirm-delete-btn').disabled = true;
+}
+
+function closeDeleteModal() {
+    document.getElementById('delete-account-modal').classList.add('hidden');
+}
+
+async function changeUsername() {
+    const newUsername = document.getElementById('new-username').value.trim();
+    
+    if (!newUsername) {
+        alert('Please enter a new username');
+        return;
+    }
+    
+    if (newUsername.length < 3 || newUsername.length > 20) {
+        alert('Username must be between 3 and 20 characters');
+        return;
+    }
+    
+    if (newUsername === '{{ current_user.username }}') {
+        alert('New username must be different from current username');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/settings/username', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: newUsername })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Username updated successfully!');
+            document.getElementById('current-username').value = newUsername;
+            document.getElementById('new-username').value = '';
+            // Reload page to reflect changes
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to update username');
+        }
+    } catch (error) {
+        console.error('Error changing username:', error);
+        alert('Error changing username');
+    }
+}
+
+async function confirmDeleteAccount() {
+    const confirmUsername = document.getElementById('confirm-username').value.trim();
+    const currentUsername = '{{ current_user.username }}';
+    
+    if (confirmUsername !== currentUsername) {
+        alert('Username does not match');
+        return;
+    }
+    
+    if (!confirm('Are you absolutely sure? This cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/settings/account', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Account deleted successfully. Redirecting to login...');
+            window.location.href = '/login';
+        } else {
+            alert(data.error || 'Failed to delete account');
+        }
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        alert('Error deleting account');
+    }
+}
+</script>
+{% endblock %}

@@ -11,58 +11,166 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-6">
+    <!-- Controls -->
     <div class="mb-4 flex items-center gap-3">
         <input id="audit-limit" type="number" class="border px-2 py-1 rounded w-20" value="20" />
         <button id="refresh-audit" class="px-3 py-1 rounded bg-indigo-600 text-white text-sm">Refresh Audit</button>
         <button id="export-csv" class="px-3 py-1 rounded bg-slate-200 text-slate-700 text-sm">Export Users CSV</button>
     </div>
-    <table class="w-full table-auto border-collapse">
+
+    <!-- Users table -->
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-x-auto">
+    <table class="w-full min-w-[960px] table-auto border-collapse text-sm">
         <thead>
-            <tr class="text-left">
+            <tr class="text-left bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 <th class="px-4 py-2">Username</th>
                 <th class="px-4 py-2">Email</th>
                 <th class="px-4 py-2">Workouts</th>
+                <th class="px-4 py-2">Current</th>
+                <th class="px-4 py-2">Best</th>
+                <th class="px-4 py-2">Last workout</th>
                 <th class="px-4 py-2">Is Admin</th>
                 <th class="px-4 py-2">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for u in users %}
-            <tr id="user-row-{{ u.id }}" class="border-t">
-                <td class="px-4 py-2">{{ u.username }}</td>
-                <td class="px-4 py-2">{{ u.email }}</td>
-                <td class="px-4 py-2">{{ u.workouts }}</td>
+            <tr id="user-row-{{ u.id }}" class="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
+                <td class="px-4 py-2 font-semibold text-slate-900">
+                    <button
+                        type="button"
+                        class="user-details-btn text-left text-indigo-700 hover:text-indigo-900 hover:underline"
+                        data-user-id="{{ u.id }}"
+                        data-username="{{ u.username }}"
+                        data-email="{{ u.email }}"
+                        data-workouts="{{ u.workouts }}"
+                        data-current-streak="{{ u.current_streak }}"
+                        data-best-streak="{{ u.best_streak }}"
+                        data-last-workout="{{ u.last_workout or '' }}"
+                        data-is-admin="{{ '1' if u.is_admin else '0' }}"
+                    >
+                        {{ u.username }}
+                    </button>
+                </td>
+                <td class="px-4 py-2 text-slate-700">{{ u.email }}</td>
+                <td class="px-4 py-2 text-slate-800">{{ u.workouts }}</td>
+                <td class="px-4 py-2 text-slate-800">{{ u.current_streak }}</td>
+                <td class="px-4 py-2 text-slate-800">{{ u.best_streak }}</td>
+                <td class="px-4 py-2 text-slate-600 text-xs whitespace-nowrap">
+                    {{ u.last_workout or '—' }}
+                </td>
                 <td class="px-4 py-2" id="user-admin-{{ u.id }}">{{ 'Yes' if u.is_admin else 'No' }}</td>
-                <td class="px-4 py-2">
-                    {% if not u.is_admin %}
-                    <button class="promote-btn px-3 py-1 rounded bg-green-500 text-white text-sm" data-user-id="{{ u.id }}" data-current-admin="{{ '0' if not u.is_admin else '1' }}">Promote</button>
-                    {% else %}
-                    <button class="promote-btn px-3 py-1 rounded bg-amber-500 text-white text-sm" data-user-id="{{ u.id }}" data-current-admin="{{ '1' if u.is_admin else '0' }}">Revoke</button>
-                    {% endif %}
-                    <button class="reset-pw-btn px-3 py-1 rounded bg-rose-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Reset PW</button>
-                    <button class="set-pw-btn px-3 py-1 rounded bg-rose-700 text-white text-sm ml-2" data-user-id="{{ u.id }}">Set PW</button>
-                    <button class="regen-share-btn px-3 py-1 rounded bg-indigo-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Regenerate Share</button>
-                    <button class="impersonate-btn px-3 py-1 rounded bg-slate-700 text-white text-sm ml-2" data-user-id="{{ u.id }}">Impersonate</button>
-                    <select class="badge-select mx-2" data-user-id="{{ u.id }}">
-                        <option value="">Select badge</option>
-                    </select>
-                    <button class="badge-action-btn px-3 py-1 rounded bg-emerald-500 text-white text-sm" data-user-id="{{ u.id }}">Award</button>
-                    <button class="badge-revoke-btn px-3 py-1 rounded bg-amber-500 text-white text-sm ml-2" data-user-id="{{ u.id }}">Revoke</button>
+                <td class="px-4 py-2 text-xs text-slate-500">
+                    Click username
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
 
     <h2 class="text-lg font-bold mt-8 mb-4">Audit Log</h2>
-    <div id="audit-log" class="bg-white p-4 rounded border max-h-72 overflow-auto text-sm text-slate-700"></div>
+    <div id="audit-log" class="bg-white p-4 rounded-2xl border border-slate-200 max-h-72 overflow-auto text-sm text-slate-700 shadow-sm"></div>
 </div>
 
 <script>
+let __adminBadges = [];
+
+function openUserModal(btn) {
+    const userId = btn.dataset.userId;
+    const username = btn.dataset.username || '';
+    const email = btn.dataset.email || '';
+    const workouts = btn.dataset.workouts || '0';
+    const currentStreak = btn.dataset.currentStreak || '0';
+    const bestStreak = btn.dataset.bestStreak || '0';
+    const lastWorkout = btn.dataset.lastWorkout || '—';
+    const isAdmin = btn.dataset.isAdmin === '1';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'space-y-4';
+    wrap.innerHTML = `
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-slate-500 font-semibold">User</p>
+                    <p class="text-lg font-bold text-slate-900">${username}</p>
+                    <p class="text-xs text-slate-600 break-words">${email}</p>
+                </div>
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full ${isAdmin ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-200 text-slate-700 border border-slate-300'} text-[11px] font-semibold">
+                    <i class="fas ${isAdmin ? 'fa-shield-halved' : 'fa-user'}"></i>
+                    ${isAdmin ? 'Admin' : 'User'}
+                </span>
+            </div>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div class="rounded-xl bg-white border border-slate-200 p-2">
+                    <p class="text-[11px] text-slate-500">Workouts</p>
+                    <p class="text-lg font-black text-slate-900">${workouts}</p>
+                </div>
+                <div class="rounded-xl bg-white border border-slate-200 p-2">
+                    <p class="text-[11px] text-slate-500">Current</p>
+                    <p class="text-lg font-black text-slate-900">${currentStreak}</p>
+                </div>
+                <div class="rounded-xl bg-white border border-slate-200 p-2">
+                    <p class="text-[11px] text-slate-500">Best</p>
+                    <p class="text-lg font-black text-slate-900">${bestStreak}</p>
+                </div>
+                <div class="rounded-xl bg-white border border-slate-200 p-2">
+                    <p class="text-[11px] text-slate-500">Last</p>
+                    <p class="text-[11px] font-semibold text-slate-800 whitespace-nowrap">${lastWorkout || '—'}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 items-center">
+            <button class="promote-btn px-3 py-1.5 rounded-full ${isAdmin ? 'bg-amber-500' : 'bg-green-500'} text-white text-xs font-semibold" data-user-id="${userId}" data-current-admin="${isAdmin ? '1' : '0'}">
+                ${isAdmin ? 'Revoke admin' : 'Promote to admin'}
+            </button>
+            <button class="impersonate-btn px-3 py-1.5 rounded-full bg-slate-800 text-white text-xs font-semibold" data-user-id="${userId}">
+                Impersonate
+            </button>
+            <button class="regen-share-btn px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold" data-user-id="${userId}">
+                Regenerate share
+            </button>
+            <button class="reset-pw-btn px-3 py-1.5 rounded-full bg-rose-500 text-white text-xs font-semibold" data-user-id="${userId}">
+                Reset password
+            </button>
+            <button class="set-pw-btn px-3 py-1.5 rounded-full bg-rose-700 text-white text-xs font-semibold" data-user-id="${userId}">
+                Set password
+            </button>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <p class="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Badges</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <select class="badge-select px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white" data-user-id="${userId}">
+                    <option value="">Select badge</option>
+                </select>
+                <button class="badge-action-btn px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold" data-user-id="${userId}">Award</button>
+                <button class="badge-revoke-btn px-3 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold" data-user-id="${userId}">Revoke</button>
+            </div>
+            <p class="mt-2 text-[11px] text-slate-500">Award/revoke a badge for this user.</p>
+        </div>
+    `;
+
+    showAppModal(`Manage ${username}`, wrap);
+
+    // Populate badges in the modal select
+    const sel = wrap.querySelector('.badge-select');
+    if (sel && __adminBadges.length) {
+        __adminBadges.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.key;
+            opt.textContent = b.name;
+            sel.appendChild(opt);
+        });
+    }
+}
+
 // Handle promote/demote clicks
 document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('promote-btn')) {
-        const btn = e.target;
+    const promoteBtn = e.target.closest ? e.target.closest('.promote-btn') : null;
+    if (promoteBtn) {
+        const btn = promoteBtn;
         const userId = btn.dataset.userId;
         const currentlyAdmin = btn.dataset.currentAdmin === '1';
         const makeAdmin = !currentlyAdmin;
@@ -95,8 +203,9 @@ document.addEventListener('click', function (e) {
         });
     }
 
-    if (e.target.classList.contains('reset-pw-btn')) {
-        const userId = e.target.dataset.userId;
+    const resetBtn = e.target.closest ? e.target.closest('.reset-pw-btn') : null;
+    if (resetBtn) {
+        const userId = resetBtn.dataset.userId;
         if (!confirm('Reset password for user ' + userId + '?')) return;
         fetch('/api/admin/reset_password', {
             method: 'POST',
@@ -112,8 +221,9 @@ document.addEventListener('click', function (e) {
         }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
     }
 
-    if (e.target.classList.contains('regen-share-btn')) {
-        const userId = e.target.dataset.userId;
+    const regenBtn = e.target.closest ? e.target.closest('.regen-share-btn') : null;
+    if (regenBtn) {
+        const userId = regenBtn.dataset.userId;
         if (!confirm('Regenerate share token for user ' + userId + '?')) return;
         fetch('/api/admin/regenerate_share', {
             method: 'POST',
@@ -129,8 +239,9 @@ document.addEventListener('click', function (e) {
         }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
     }
 
-    if (e.target.classList.contains('set-pw-btn')) {
-        const userId = e.target.dataset.userId;
+    const setPwBtn = e.target.closest ? e.target.closest('.set-pw-btn') : null;
+    if (setPwBtn) {
+        const userId = setPwBtn.dataset.userId;
         const newpw = prompt('Enter new password for user ' + userId + ' (min 6 chars):');
         if (!newpw) return;
         fetch('/api/admin/set_password', {
@@ -147,8 +258,9 @@ document.addEventListener('click', function (e) {
         }).catch(err => { console.error(err); showAppModal('Server error', '<p>Server error occurred</p>') });
     }
 
-    if (e.target.classList.contains('badge-action-btn')) {
-        const userId = e.target.dataset.userId;
+    const badgeAwardBtn = e.target.closest ? e.target.closest('.badge-action-btn') : null;
+    if (badgeAwardBtn) {
+        const userId = badgeAwardBtn.dataset.userId;
         const select = document.querySelector(`.badge-select[data-user-id='${userId}']`);
         const key = select.value;
         if (!key) return alert('Select a badge');
@@ -162,8 +274,9 @@ document.addEventListener('click', function (e) {
         }).catch(err => { console.error(err); alert('Server error') });
     }
 
-    if (e.target.classList.contains('badge-revoke-btn')) {
-        const userId = e.target.dataset.userId;
+    const badgeRevokeBtn = e.target.closest ? e.target.closest('.badge-revoke-btn') : null;
+    if (badgeRevokeBtn) {
+        const userId = badgeRevokeBtn.dataset.userId;
         const select = document.querySelector(`.badge-select[data-user-id='${userId}']`);
         const key = select.value;
         if (!key) return alert('Select a badge');
@@ -177,8 +290,9 @@ document.addEventListener('click', function (e) {
         }).catch(err => { console.error(err); alert('Server error') });
     }
 
-    if (e.target.classList.contains('impersonate-btn')) {
-        const userId = e.target.dataset.userId;
+    const impBtn = e.target.closest ? e.target.closest('.impersonate-btn') : null;
+    if (impBtn) {
+        const userId = impBtn.dataset.userId;
         if (!confirm('Start impersonating user ' + userId + '?')) return;
         fetch('/api/admin/impersonate', {
             method: 'POST',
@@ -219,18 +333,19 @@ document.addEventListener('click', function (e) {
         const resp = await fetch('/api/badges');
         const body = await resp.json();
         const badges = body.badges || [];
-        document.querySelectorAll('.badge-select').forEach(sel => {
-            badges.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b.key;
-                opt.textContent = b.name;
-                sel.appendChild(opt);
-            });
-        });
+        __adminBadges = badges;
         // load audit
         await loadAudit();
     } catch (err) { console.error(err) }
 })();
+
+// Username click -> modal actions
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest ? e.target.closest('.user-details-btn') : null;
+    if (!btn) return;
+    e.preventDefault();
+    openUserModal(btn);
+});
 
 async function loadAudit() {
     const limit = document.getElementById('audit-limit').value || 20;

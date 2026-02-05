@@ -8,20 +8,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen flex items-center justify-center">
-    <div class="w-full max-w-md">
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-md relative">
+        <div class="pointer-events-none absolute -top-24 -right-10 w-40 h-40 bg-indigo-500/25 blur-3xl rounded-full"></div>
+        <div class="pointer-events-none absolute -bottom-24 -left-16 w-52 h-52 bg-purple-500/25 blur-3xl rounded-full"></div>
+
         <!-- Logo -->
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+        <div class="relative text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-xl shadow-indigo-500/40">
                 <i class="fas fa-dumbbell"></i>
             </div>
-            <h1 class="text-3xl font-black text-slate-900">Gym Streak</h1>
-            <p class="text-slate-500 mt-2">Keep the momentum going</p>
+            <h1 class="text-3xl font-black text-slate-50">Gym Streak</h1>
+            <p class="text-slate-400 mt-2 text-sm">Log workouts, stack streaks, earn badges.</p>
         </div>
 
         <!-- Login Card -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-            <h2 class="text-2xl font-bold text-slate-900 mb-6">Welcome Back</h2>
+        <div class="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-slate-200/70 animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold text-slate-900">Welcome back</h2>
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-100">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow"></span>
+                    Day 1 is today
+                </span>
+            </div>
 
             {% if error %}
             <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200">
@@ -43,29 +52,34 @@
                 </div>
 
                 <!-- Remember me -->
-                <div class="flex items-center justify-between">
-                    <label class="flex items-center text-sm text-slate-700">
-                        <input type="checkbox" name="remember" value="1" class="mr-3 rounded"> Remember me
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center text-slate-700 gap-2">
+                        <input type="checkbox" name="remember" value="1" class="rounded"> 
+                        <span>Remember me</span>
                     </label>
+                    <span class="text-slate-400 text-xs">Secure, no spam.</span>
                 </div>
 
                 <!-- Login Button -->
-                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold transition-all hover:shadow-lg mt-6">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold transition-all hover:shadow-lg hover:translate-y-0.5 mt-6">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Log in to your streak
                 </button>
             </form>
 
             <!-- Signup Link -->
-            <div class="mt-6 text-center">
+            <div class="mt-6 text-center text-sm">
                 <p class="text-slate-600">Don't have an account? 
                     <a href="{{ url_for('signup') }}" class="text-indigo-600 font-semibold hover:text-indigo-700">Sign up</a>
+                </p>
+                <p class="mt-2 text-xs text-slate-400">
+                    No ads, no feeds—just your streak and progress.
                 </p>
             </div>
         </div>
 
         <!-- Footer -->
         <footer class="mt-8 py-4 text-center text-xs text-slate-500">
-            <p>Made by <a href="https://httpsumang.vercel.app" target="_blank" class="text-indigo-600 hover:text-indigo-700 font-semibold">Umang Thapa</a></p>
+            <p>Made by <a href="https://httpsumang.vercel.app" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold">Umang Thapa</a></p>
         </footer>
     </div>
 </body>

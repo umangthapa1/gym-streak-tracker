@@ -8,20 +8,37 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen flex items-center justify-center">
-    <div class="w-full max-w-md">
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-md relative">
+        <div class="pointer-events-none absolute -top-24 -left-10 w-40 h-40 bg-indigo-500/25 blur-3xl rounded-full"></div>
+        <div class="pointer-events-none absolute -bottom-24 -right-16 w-52 h-52 bg-purple-500/25 blur-3xl rounded-full"></div>
         <!-- Logo -->
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+        <div class="relative text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-xl shadow-indigo-500/40">
                 <i class="fas fa-dumbbell"></i>
             </div>
-            <h1 class="text-3xl font-black text-slate-900">Gym Streak</h1>
-            <p class="text-slate-500 mt-2">Start your fitness journey</p>
+            <h1 class="text-3xl font-black text-slate-50">Gym Streak</h1>
+            <p class="text-slate-400 mt-2 text-sm">Build a streak you’re proud of.</p>
         </div>
 
         <!-- Signup Card -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-            <h2 class="text-2xl font-bold text-slate-900 mb-6">Create Account</h2>
+        <div class="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-slate-200/70 animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Create account</h2>
+                    <p class="text-xs text-slate-500 mt-1">It takes less than a minute.</p>
+                </div>
+                <div class="hidden sm:flex flex-col items-end gap-1 text-[11px] text-slate-400">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-900 text-slate-100 border border-slate-700">
+                        <i class="fas fa-bolt text-amber-300"></i>
+                        Streak tracking
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-900 text-slate-100 border border-slate-700/80">
+                        <i class="fas fa-award text-indigo-300"></i>
+                        Badge milestones
+                    </span>
+                </div>
+            </div>
 
             {% if error %}
             <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200">
@@ -55,22 +72,25 @@
                 </div>
 
                 <!-- Signup Button -->
-                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold transition-all hover:shadow-lg mt-6">
-                    <i class="fas fa-user-plus mr-2"></i>Create Account
+                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold transition-all hover:shadow-lg hover:translate-y-0.5 mt-6">
+                    <i class="fas fa-user-plus mr-2"></i>Create my account
                 </button>
             </form>
 
             <!-- Login Link -->
-            <div class="mt-6 text-center">
+            <div class="mt-6 text-center text-sm">
                 <p class="text-slate-600">Already have an account? 
                     <a href="{{ url_for('login') }}" class="text-indigo-600 font-semibold hover:text-indigo-700">Login</a>
+                </p>
+                <p class="mt-2 text-xs text-slate-400">
+                    Your data stays private. No leaderboards, just personal progress.
                 </p>
             </div>
         </div>
 
         <!-- Footer -->
         <footer class="mt-8 py-4 text-center text-xs text-slate-500">
-            <p>Made by <a href="https://httpsumang.vercel.app" target="_blank" class="text-indigo-600 hover:text-indigo-700 font-semibold">Umang Thapa</a></p>
+            <p>Made by <a href="https://httpsumang.vercel.app" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold">Umang Thapa</a></p>
         </footer>
     </div>
 </body>

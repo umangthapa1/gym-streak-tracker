@@ -10,33 +10,116 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto p-6">
-    <div id="badges-container" class="grid grid-cols-3 gap-4">
+<div class="max-w-3xl mx-auto p-6 space-y-6">
+    <!-- Progress / summary -->
+    <section class="rounded-2xl bg-slate-900 text-slate-50 p-5 border border-indigo-500/40 shadow-xl relative overflow-hidden animate-fade-in">
+        <div class="pointer-events-none absolute -top-10 -right-12 w-40 h-40 bg-indigo-500/30 blur-3xl rounded-full"></div>
+        <div class="pointer-events-none absolute -bottom-12 -left-16 w-48 h-48 bg-purple-500/25 blur-3xl rounded-full"></div>
+        <div id="badges-summary" class="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-indigo-200/80 mb-1 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500 text-[10px] shadow-md">
+                        <i class="fas fa-medal"></i>
+                    </span>
+                    Badge progress
+                </p>
+                <p class="text-sm text-slate-300" id="badges-progress-text">Loading badges…</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-20 h-20 rounded-full border border-indigo-400/40 bg-slate-950/60 flex items-center justify-center shadow-inner">
+                    <span id="badges-progress-ring" class="text-lg font-black">–</span>
+                </div>
+                <div class="text-xs text-slate-400 max-w-[9rem]">
+                    Unlock badges by hitting streak milestones and showing up consistently.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Badges grid -->
+    <div id="badges-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <!-- Badges populated by JS -->
     </div>
 </div>
 <script>
 fetch('/api/badges').then(r => r.json()).then(data => {
     const container = document.getElementById('badges-container');
+    const summaryText = document.getElementById('badges-progress-text');
+    const summaryRing = document.getElementById('badges-progress-ring');
+
+    const badges = data.badges || [];
+    const awarded = data.awarded || {};
+
+    const unlockedCount = badges.filter(b => awarded[b.key]).length;
+    const total = badges.length || 0;
+
+    if (total === 0) {
+        summaryText.textContent = 'No badges defined yet.';
+        summaryRing.textContent = '0';
+        container.innerHTML = '';
+        return;
+    }
+
+    const pct = Math.round((unlockedCount / total) * 100);
+    summaryText.textContent = `${unlockedCount} of ${total} badges unlocked`;
+    summaryRing.textContent = `${pct}%`;
+
     container.innerHTML = '';
-    data.badges.forEach(b => {
-        const awarded = data.awarded[b.key];
-        const div = document.createElement('div');
-        div.className = 'p-4 rounded-lg border bg-white flex flex-col items-center';
-        div.innerHTML = `<div class="text-3xl mb-2">${b.icon || '🏅'}</div><div class="font-bold">${b.name}</div><div class="text-sm text-slate-600 mt-1">${b.description || ''}</div>`;
-        if (awarded) {
-            const at = document.createElement('div');
-            at.className = 'text-xs text-indigo-600 mt-2';
-            at.textContent = `Awarded: ${awarded.awarded_at}`;
-            div.appendChild(at);
-        } else {
-            const na = document.createElement('div');
-            na.className = 'text-xs text-slate-400 mt-2';
-            na.textContent = 'Locked';
-            div.appendChild(na);
-        }
-        container.appendChild(div);
+
+    // Show unlocked badges first, then locked ones
+    const sorted = [...badges].sort((a, b) => {
+        const aUnlocked = !!awarded[a.key];
+        const bUnlocked = !!awarded[b.key];
+        if (aUnlocked === bUnlocked) return 0;
+        return aUnlocked ? -1 : 1;
     });
+
+    sorted.forEach(b => {
+        const hasBadge = !!awarded[b.key];
+        const meta = hasBadge ? awarded[b.key] : null;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = [
+            'relative p-4 rounded-2xl border flex flex-col items-center text-center transition-all cursor-default',
+            hasBadge
+                ? 'bg-gradient-to-br from-indigo-600/90 via-indigo-500/90 to-purple-600/90 text-slate-50 shadow-lg glow-effect'
+                : 'bg-white border-dashed border-slate-200 text-slate-500 opacity-80 hover:opacity-100 hover:border-slate-300'
+        ].join(' ');
+
+        const inner = document.createElement('div');
+        inner.className = 'flex flex-col items-center';
+        inner.innerHTML = `
+            <div class="text-3xl mb-2">${b.icon || '🏅'}</div>
+            <div class="font-semibold text-sm ${hasBadge ? '' : 'text-slate-700'}">${b.name}</div>
+            <div class="text-[11px] mt-1 ${hasBadge ? 'text-indigo-100/90' : 'text-slate-500'}">
+                ${b.description || ''}
+            </div>
+        `;
+        wrapper.appendChild(inner);
+
+        const footer = document.createElement('div');
+        footer.className = 'mt-3 text-[11px]';
+        if (hasBadge) {
+            footer.innerHTML = `
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-950/30 border border-indigo-200/40 text-indigo-100">
+                    <i class="fas fa-check-circle text-emerald-300"></i>
+                    Unlocked ${meta && meta.awarded_at ? meta.awarded_at : ''}
+                </span>
+            `;
+        } else {
+            footer.innerHTML = `
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[11px]">
+                    <i class="fas fa-lock text-slate-500"></i>
+                    Locked
+                </span>
+            `;
+        }
+        wrapper.appendChild(footer);
+
+        container.appendChild(wrapper);
+    });
+}).catch(err => {
+    console.error('Failed to load badges', err);
 });
 </script>
 {% endblock %}

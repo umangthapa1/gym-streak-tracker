@@ -456,6 +456,12 @@ def get_badges():
 def badges_page():
     return render_template('badges.html')
 
+# Settings is now a modal; redirect direct /settings visits to home
+@app.route('/settings')
+@login_required
+def settings_page():
+    return redirect(url_for('index'))
+
 @app.route('/api/share-token', methods=['GET','POST'])
 @login_required
 def share_token_handler():
@@ -656,11 +662,26 @@ def admin_dashboard():
         return redirect(url_for('index'))
 
     users = User.query.order_by(User.username).all()
-    # Simple stats per user
+    # Per-user stats for admin table
     user_stats = []
     for u in users:
-        wcount = Workout.query.filter_by(user_id=u.id).count()
-        user_stats.append({'id': u.id, 'username': u.username, 'email': u.email, 'workouts': wcount, 'is_admin': u.is_admin})
+        workouts = Workout.query.filter_by(user_id=u.id).order_by(Workout.date.asc()).all()
+        wcount = len(workouts)
+        current_streak, best_streak = calculate_streak_for_user(u.id) if wcount else (0, 0)
+        last_workout = workouts[-1].date if workouts else None
+
+        user_stats.append(
+            {
+                'id': u.id,
+                'username': u.username,
+                'email': u.email,
+                'workouts': wcount,
+                'is_admin': u.is_admin,
+                'current_streak': current_streak,
+                'best_streak': best_streak,
+                'last_workout': last_workout,
+            }
+        )
 
     return render_template('admin.html', users=user_stats)
 
@@ -768,13 +789,17 @@ def admin_stop_impersonate():
 @app.route('/api/routines/<int:day>', methods=['PUT', 'DELETE'])
 @login_required
 def manage_routine(day):
+    if day < 0 or day > 6:
+        return jsonify({'error': 'Invalid day'}), 400
+
     routine = Routine.query.filter_by(user_id=current_user.id, day=day).first()
-    
-    if not routine:
-        return jsonify({'error': 'Routine not found'}), 404
-    
+
     if request.method == 'PUT':
-        data = request.json
+        if not routine:
+            routine = Routine(user_id=current_user.id, day=day, name='', is_rest_day=False)
+            db.session.add(routine)
+            db.session.flush()
+        data = request.json or {}
         routine.name = data.get('name', '')
         routine.is_rest_day = data.get('is_rest_day', False)
         routine.set_muscle_groups(data.get('muscle_groups', []))
@@ -791,11 +816,12 @@ def manage_routine(day):
         })
     
     elif request.method == 'DELETE':
+        if not routine:
+            return jsonify({'success': True, 'routine': {'day': day, 'name': '', 'muscle_groups': [], 'is_rest_day': False}})
         routine.name = ''
         routine.muscle_groups = '[]'
         routine.is_rest_day = False
         db.session.commit()
-        
         return jsonify({'success': True, 'routine': {
             'day': routine.day,
             'name': '',
@@ -851,6 +877,75 @@ def get_calendar():
         'month': month,
         'year': year
     })
+
+@app.route('/api/settings/username', methods=['PUT'])
+@login_required
+def change_username():
+    data = request.json or {}
+    new_username = data.get('username', '').strip()
+    
+    if not new_username:
+        return jsonify({'error': 'Username is required'}), 400
+    
+    if len(new_username) < 3 or len(new_username) > 20:
+        return jsonify({'error': 'Username must be between 3 and 20 characters'}), 400
+    
+    if new_username == current_user.username:
+        return jsonify({'error': 'New username must be different from current username'}), 400
+    
+    # Check if username already exists
+    existing_user = User.query.filter_by(username=new_username).first()
+    if existing_user and existing_user.id != current_user.id:
+        return jsonify({'error': 'Username already taken'}), 400
+    
+    old_username = current_user.username
+    current_user.username = new_username
+    db.session.commit()
+    
+    # Audit log
+    try:
+        log = AuditLog(actor_id=current_user.id, action='change_username', details=f'old={old_username}, new={new_username}')
+        db.session.add(log)
+        db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            db.session.remove()
+    
+    return jsonify({'success': True, 'username': new_username})
+
+@app.route('/api/settings/account', methods=['DELETE'])
+@login_required
+def delete_account():
+    # Get user ID before deletion (for audit log)
+    user_id = current_user.id
+    username = current_user.username
+    
+    # Delete all related data (cascade should handle this, but being explicit)
+    Workout.query.filter_by(user_id=user_id).delete()
+    Routine.query.filter_by(user_id=user_id).delete()
+    UserBadge.query.filter_by(user_id=user_id).delete()
+    
+    # Delete the user
+    db.session.delete(current_user)
+    db.session.commit()
+    
+    # Audit log (create before user deletion)
+    try:
+        log = AuditLog(actor_id=None, action='account_deleted', details=f'user_id={user_id}, username={username}')
+        db.session.add(log)
+        db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            db.session.remove()
+    
+    # Logout the user
+    logout_user()
+    
+    return jsonify({'success': True, 'message': 'Account deleted successfully'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

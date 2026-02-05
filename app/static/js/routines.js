@@ -16,18 +16,7 @@ const muscleGroupEmojis = {
     'glutes': '🍑'
 };
 
-const muscleGroupIcons = {
-    'chest': 'fa-lungs',
-    'back': 'fa-dumbbell',
-    'biceps': 'fa-hand-fist',
-    'triceps': 'fa-hand-fist',
-    'legs': 'fa-mountain',
-    'shoulders': 'fa-shield',
-    'abs': 'fa-square',
-    'cardio': 'fa-person-running',
-    'arms': 'fa-hand-fist',
-    'glutes': 'fa-person-biking'
-};
+// muscleGroupIcons is provided by main.js (Font Awesome icons)
 
 // Toggle menu visibility
 function toggleMenu(dayIndex) {
@@ -57,11 +46,25 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStats();
 });
 
+// Normalize API response: backend returns { "0": {...}, "1": {...} } or empty {}.
+// Ensure we always have an array of 7 day objects.
+function normalizeRoutines(raw) {
+    const defaultDay = () => ({ is_rest_day: false, muscle_groups: [], name: '' });
+    const list = Array.from({ length: 7 }, (_, i) => {
+        const key = String(i);
+        return raw[key] != null
+            ? { is_rest_day: !!raw[key].is_rest_day, muscle_groups: raw[key].muscle_groups || [], name: raw[key].name || '' }
+            : defaultDay();
+    });
+    return list;
+}
+
 // Load and display routines
 async function loadRoutines() {
     try {
         const response = await fetch('/api/routines');
-        const routines = await response.json();
+        const raw = await response.json();
+        const routines = normalizeRoutines(raw);
 
         const grid = document.getElementById('routines-grid');
         grid.innerHTML = '';
@@ -74,31 +77,31 @@ async function loadRoutines() {
             const routine = routines[i];
             const day = days[i];
             const isToday = i === today;
-            const borderClass = isToday ? 'border-indigo-500 bg-indigo-50' : '';
-            const todayLabel = isToday ? '<span class="text-xs font-bold text-indigo-600 ml-auto">Today</span>' : '';
+            const borderClass = isToday ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-400' : '';
+            const todayLabel = isToday ? '<span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 ml-auto">Today</span>' : '';
 
-            let html = `<div class="p-4 rounded-2xl border-2 ${borderClass} border-slate-200 flex items-center justify-between">`;
+            let html = `<div class="p-4 rounded-2xl border-2 ${borderClass} border-slate-200 dark-routine-border flex items-center justify-between dark-routine-card">`;
 
             if (routine.is_rest_day) {
                 html += `
                     <div class="flex items-center gap-3 flex-1">
                         <span class="text-2xl">☕</span>
                         <div>
-                            <p class="font-bold text-slate-900">${dayAbbr[i]}</p>
-                            <p class="text-sm text-slate-500">Rest Day</p>
+                            <p class="font-bold text-slate-900 dark-routine-text">${dayAbbr[i]}</p>
+                            <p class="text-sm text-slate-500 dark-routine-text-muted">Rest Day</p>
                         </div>
                     </div>
                     ${todayLabel}
                     <div class="relative">
-                        <button onclick="toggleMenu(${i})" class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+                        <button onclick="toggleMenu(${i})" class="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition">
                             <i class="fas fa-ellipsis-vertical"></i>
                         </button>
-                        <div id="menu-${i}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
-                            <button onclick="openEditModal(${i}); toggleMenu(${i})" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                                <i class="fas fa-pencil text-indigo-600"></i> Edit
+                        <div id="menu-${i}" class="hidden absolute right-0 mt-2 w-40 dark-modal-bg rounded-lg shadow-lg border dark-modal-border z-10">
+                            <button onclick="openEditModal(${i}); toggleMenu(${i})" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark-modal-text hover:bg-slate-50 dark-modal-hover flex items-center gap-2">
+                                <i class="fas fa-pencil text-indigo-600 dark:text-indigo-400"></i> Edit
                             </button>
-                            <button onclick="deleteRoutine(${i})" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                <i class="fas fa-trash text-red-600"></i> Delete
+                            <button onclick="deleteRoutine(${i})" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                <i class="fas fa-trash text-red-600 dark:text-red-400"></i> Delete
                             </button>
                         </div>
                     </div>
@@ -109,25 +112,25 @@ async function loadRoutines() {
 
                 html += `
                     <div class="flex items-center gap-3 flex-1">
-                        <span class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                        <span class="w-10 h-10 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-lg">
                             <i class="fas ${iconClass}"></i>
                         </span>
                         <div>
-                            <p class="font-bold text-slate-900">${dayAbbr[i]}</p>
-                            <p class="text-sm text-slate-600">${routine.muscle_groups.join(', ')}</p>
+                            <p class="font-bold text-slate-900 dark-routine-text">${dayAbbr[i]}</p>
+                            <p class="text-sm text-slate-600 dark-routine-text-muted">${routine.muscle_groups.join(', ')}</p>
                         </div>
                     </div>
                     ${todayLabel}
                     <div class="relative">
-                        <button onclick="toggleMenu(${i})" class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+                        <button onclick="toggleMenu(${i})" class="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition">
                             <i class="fas fa-ellipsis-vertical"></i>
                         </button>
-                        <div id="menu-${i}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
-                            <button onclick="openEditModal(${i}); toggleMenu(${i})" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                                <i class="fas fa-pencil text-indigo-600"></i> Edit
+                        <div id="menu-${i}" class="hidden absolute right-0 mt-2 w-40 dark-modal-bg rounded-lg shadow-lg border dark-modal-border z-10">
+                            <button onclick="openEditModal(${i}); toggleMenu(${i})" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark-modal-text hover:bg-slate-50 dark-modal-hover flex items-center gap-2">
+                                <i class="fas fa-pencil text-indigo-600 dark:text-indigo-400"></i> Edit
                             </button>
-                            <button onclick="deleteRoutine(${i})" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                <i class="fas fa-trash text-red-600"></i> Delete
+                            <button onclick="deleteRoutine(${i})" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                <i class="fas fa-trash text-red-600 dark:text-red-400"></i> Delete
                             </button>
                         </div>
                     </div>
@@ -135,22 +138,22 @@ async function loadRoutines() {
             } else {
                 html += `
                     <div class="flex items-center gap-3 flex-1">
-                        <span class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold">
+                        <span class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold">
                             -
                         </span>
                         <div>
-                            <p class="font-bold text-slate-900">${dayAbbr[i]}</p>
-                            <p class="text-sm text-slate-500">No routine set</p>
+                            <p class="font-bold text-slate-900 dark-routine-text">${dayAbbr[i]}</p>
+                            <p class="text-sm text-slate-500 dark-routine-text-muted">No routine set</p>
                         </div>
                     </div>
                     ${todayLabel}
                     <div class="relative">
-                        <button onclick="toggleMenu(${i})" class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+                        <button onclick="toggleMenu(${i})" class="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition">
                             <i class="fas fa-ellipsis-vertical"></i>
                         </button>
-                        <div id="menu-${i}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
-                            <button onclick="openEditModal(${i}); toggleMenu(${i})" class="w-full text-left px-4 py-2 text-sm text-indigo-600 hover:bg-slate-50 flex items-center gap-2">
-                                <i class="fas fa-plus text-indigo-600"></i> Add Routine
+                        <div id="menu-${i}" class="hidden absolute right-0 mt-2 w-40 dark-modal-bg rounded-lg shadow-lg border dark-modal-border z-10">
+                            <button onclick="openEditModal(${i}); toggleMenu(${i})" class="w-full text-left px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark-modal-hover flex items-center gap-2">
+                                <i class="fas fa-plus text-indigo-600 dark:text-indigo-400"></i> Add Routine
                             </button>
                         </div>
                     </div>
@@ -175,21 +178,21 @@ function openEditModal(dayIndex) {
     modal.id = `modal-${dayIndex}`;
 
     modal.innerHTML = `
-        <div class="bg-white rounded-3xl border border-slate-200 p-8 max-w-md w-full shadow-xl animate-scale-pop-slow">
-            <h2 class="text-2xl font-bold mb-6 text-slate-900">${days[dayIndex]}</h2>
+        <div class="dark-modal-bg rounded-3xl border dark-modal-border p-8 max-w-md w-full shadow-xl animate-scale-pop-slow">
+            <h2 class="text-2xl font-bold mb-6 dark-modal-text">${days[dayIndex]}</h2>
             
             <div class="mb-6">
-                <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer">
+                <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer">
                     <input type="checkbox" id="rest-day-check" onchange="updateMuscleDisplay(${dayIndex})" class="w-5 h-5 rounded-lg cursor-pointer" />
-                    <span class="font-semibold text-slate-900">Rest Day</span>
+                    <span class="font-semibold dark-modal-text">Rest Day</span>
                 </label>
             </div>
 
             <div id="muscles-container" class="mb-6">
-                <p class="text-sm font-semibold text-slate-600 mb-3 uppercase tracking-wider">Routine Name</p>
+                <p class="text-sm font-semibold dark-modal-text-muted mb-3 uppercase tracking-wider">Routine Name</p>
                 <input type="text" id="routine-name" placeholder="e.g., Chest & Biceps" class="w-full mb-4">
                 
-                <p class="text-sm font-semibold text-slate-600 mb-3 uppercase tracking-wider">Muscle Groups</p>
+                <p class="text-sm font-semibold dark-modal-text-muted mb-3 uppercase tracking-wider">Muscle Groups</p>
                 <div class="space-y-2 mb-4 flex flex-wrap gap-2" id="muscle-list"></div>
                 
                 <div class="flex flex-wrap gap-2 mb-3" id="muscle-buttons"></div>
@@ -199,7 +202,7 @@ function openEditModal(dayIndex) {
                 <button onclick="saveRoutine(${dayIndex}, '${modal.id}')" class="flex-1 px-4 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold transition-all">
                     Save
                 </button>
-                <button onclick="closeModal('${modal.id}')" class="flex-1 px-4 py-2 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold transition-all">
+                <button onclick="closeModal('${modal.id}')" class="flex-1 px-4 py-2 rounded-2xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 dark-modal-text font-bold transition-all">
                     Cancel
                 </button>
             </div>
@@ -211,7 +214,8 @@ function openEditModal(dayIndex) {
     // Load current routine
     fetch('/api/routines')
         .then(r => r.json())
-        .then(routines => {
+        .then(raw => {
+            const routines = normalizeRoutines(raw);
             const routine = routines[dayIndex];
             const restCheck = document.getElementById('rest-day-check');
             const routineName = document.getElementById('routine-name');
@@ -230,9 +234,9 @@ function openEditModal(dayIndex) {
                 
                 const isSelected = routine.muscle_groups && routine.muscle_groups.includes(mg);
                 if (isSelected) {
-                    button.className += ' border-indigo-600 bg-indigo-100 text-indigo-700';
+                    button.className += ' border-indigo-600 dark:border-indigo-500 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300';
                 } else {
-                    button.className += ' border-slate-300 bg-white text-slate-700 hover:border-indigo-600';
+                    button.className += ' border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-indigo-600 dark:hover:border-indigo-500';
                 }
                 
                 button.onclick = () => toggleMuscleButton(mg, button);
@@ -274,12 +278,19 @@ function updateMuscleDisplay(dayIndex) {
 // Toggle muscle button selection
 function toggleMuscleButton(muscle, button) {
     button.classList.toggle('border-indigo-600');
+    button.classList.toggle('dark:border-indigo-500');
     button.classList.toggle('bg-indigo-100');
+    button.classList.toggle('dark:bg-indigo-900/30');
     button.classList.toggle('text-indigo-700');
+    button.classList.toggle('dark:text-indigo-300');
     button.classList.toggle('border-slate-300');
+    button.classList.toggle('dark:border-slate-600');
     button.classList.toggle('bg-white');
+    button.classList.toggle('dark:bg-slate-800');
     button.classList.toggle('text-slate-700');
+    button.classList.toggle('dark:text-slate-300');
     button.classList.toggle('hover:border-indigo-600');
+    button.classList.toggle('dark:hover:border-indigo-500');
 
     // Update the routine name default when selection changes
     updateRoutineNameFromSelected();
@@ -413,7 +424,8 @@ async function toggleRestDay(dayIndex, makeRestDay) {
 async function removeMuscleGroup(dayIndex, muscle) {
     try {
         const response = await fetch('/api/routines');
-        const routines = await response.json();
+        const raw = await response.json();
+        const routines = normalizeRoutines(raw);
         const routine = routines[dayIndex];
         
         routine.muscle_groups = routine.muscle_groups.filter(m => m !== muscle);
