@@ -27,18 +27,18 @@ function initThemeToggle() {
     let current = getPreferredTheme();
     applyTheme(current);
 
-    const icon = toggle.querySelector('i');
-    if (icon) {
-        icon.className = current === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-    }
+    const syncToggle = () => {
+        const isDark = current === 'dark';
+        toggle.classList.toggle('is-dark', isDark);
+        toggle.setAttribute('aria-checked', isDark ? 'true' : 'false');
+    };
+    syncToggle();
 
     toggle.addEventListener('click', () => {
         current = current === 'dark' ? 'light' : 'dark';
         localStorage.setItem(THEME_STORAGE_KEY, current);
         applyTheme(current);
-        if (icon) {
-            icon.className = current === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-        }
+        syncToggle();
     });
 }
 
@@ -894,4 +894,3 @@ document.addEventListener('DOMContentLoaded', () => {
         // nothing matched; ignore
     });
 });
-

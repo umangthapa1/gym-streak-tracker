@@ -23,10 +23,12 @@
                 <button
                     id="theme-toggle"
                     type="button"
-                    class="nav-pill inline-flex items-center justify-center rounded-full p-2 text-xs"
+                    class="theme-switch"
+                    role="switch"
+                    aria-checked="false"
                     aria-label="Toggle color theme"
                 >
-                    <i class="fas fa-moon"></i>
+                    <span class="theme-switch-thumb" aria-hidden="true"></span>
                 </button>
                 <a href="/logout" class="nav-pill px-4 py-2 rounded-xl font-semibold transition-all text-sm">
                     <i class="fas fa-sign-out-alt mr-2"></i>Logout

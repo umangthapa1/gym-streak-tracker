@@ -45,8 +45,9 @@
                 <a href="/badges" class="nav-pill px-4 py-2 rounded-xl font-semibold transition-all text-xs sm:text-sm w-full sm:w-auto text-center">
                     Badges
                 </a>
-                <button type="button" id="settings-btn" class="nav-pill px-4 py-2 rounded-xl font-semibold transition-all text-xs sm:text-sm w-full sm:w-auto text-center flex items-center justify-center">
-                    <i class="fas fa-cog mr-2"></i>Settings
+                <button type="button" id="settings-btn" class="nav-pill p-2.5 rounded-xl font-semibold transition-all text-xs sm:text-sm w-full sm:w-auto text-center flex items-center justify-center" aria-label="Settings">
+                    <i class="fas fa-cog"></i>
+                    <span class="sr-only">Settings</span>
                 </button>
                 {% endif %}
                 <a href="/logout" class="nav-pill px-4 py-2 rounded-xl font-semibold transition-all text-xs sm:text-sm w-full sm:w-auto text-center">
@@ -55,10 +56,12 @@
                 <button
                     id="theme-toggle"
                     type="button"
-                    class="nav-pill inline-flex items-center justify-center rounded-full p-2 text-xs"
+                    class="theme-switch"
+                    role="switch"
+                    aria-checked="false"
                     aria-label="Toggle color theme"
                 >
-                    <i class="fas fa-moon"></i>
+                    <span class="theme-switch-thumb" aria-hidden="true"></span>
                 </button>
             </div>
         </div>
@@ -259,6 +262,15 @@
                     </div>
                     <p class="text-xs dark-modal-text-muted mt-1">3–20 characters, must be unique</p>
                 </div>
+                <div class="border-t dark-modal-border pt-6">
+                    <h3 class="text-sm font-semibold dark-modal-text-muted uppercase tracking-wider mb-2">Account</h3>
+                    <p class="text-xs dark-modal-text-muted mb-3">Sign out on this device.</p>
+                    <a href="/logout" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border dark-modal-border dark-modal-text text-sm font-semibold hover:bg-slate-100 dark-modal-hover transition">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+
                 <div class="border-t dark-modal-border pt-6">
                     <h3 class="text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">Danger zone</h3>
                     <p class="text-xs dark-modal-text-muted mb-3">Permanently delete your account and all data. This cannot be undone.</p>
